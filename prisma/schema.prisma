@@ -6,10 +6,92 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model insumo {
+  id_insumo  Int     @id @default(autoincrement())
+  nom_insumo String
+  stock_min  Int
+  stock_max  Int
+  stock_actual Int
+
+  insumos_por_deposito insumos_por_deposito[]
+}
+
+model deposito {
+  id_deposito          Int     @id @default(autoincrement())
+  nom_deposito         String
+  tel_deposito         String
+  dir_deposito         String
+  stock_max_deposito   Int
+  stock_actual_deposito Int
+
+  insumos_por_deposito insumos_por_deposito[]
+  movimiento_stock     movimiento_stock[]
+}
+
+model insumos_por_deposito {
+  id_insumos_deposito Int     @id @default(autoincrement())
+  id_insumo           Int
+  id_deposito         Int
+  stock_insumo        Int
+
+  insumo   insumo   @relation(fields: [id_insumo], references: [id_insumo])
+  deposito deposito @relation(fields: [id_deposito], references: [id_deposito])
+  detalle_movimiento detalle_movimiento[]
+}
+
+model detalle_movimiento {
+  id_detalle_mov      Int @id @default(autoincrement())
+  id_insumos_deposito Int
+  id_mov_stock        Int
+  cantidad_mov        Int
+
+  insumos_por_deposito insumos_por_deposito @relation(fields: [id_insumos_deposito], references: [id_insumos_deposito])
+  movimiento_stock     movimiento_stock    @relation(fields: [id_mov_stock], references: [id_mov_stock])
+}
+
+model movimiento_stock {
+  id_mov_stock   Int      @id @default(autoincrement())
+  id_deposito    Int
+  id_tipo_mov    Int
+  id_user        Int
+  fecha_registro DateTime @default(now())
+
+  deposito        deposito       @relation(fields: [id_deposito], references: [id_deposito])
+  tipo_movimiento tipo_movimiento @relation(fields: [id_tipo_mov], references: [id_tipo_mov])
+  user            user           @relation(fields: [id_user], references: [id])
+  detalle_movimiento detalle_movimiento[]
+}
+
+model tipo_movimiento {
+  id_tipo_mov Int @id @default(autoincrement())
+  nombre_mov  String
+
+  movimiento_stock movimiento_stock[]
+}
+
+model user {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  roleId Int
+  role   role @relation(fields: [roleId], references: [id])
+  movimientos movimiento_stock[]
+}
+
+model role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+
+  users user[]
+}
+
