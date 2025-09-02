@@ -27,7 +27,7 @@ const Button: React.FC<ButtonProps> = ({
         severity={severity}
         onClick={onClick}
         disabled={disabled}
-        className={className}
+        className={`0.5rem 0.2rem rounded-xl shadow-md font-bold ${className}`} // 👆 estilo base + tu className
     />
     );
 };
