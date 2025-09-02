@@ -1,8 +1,9 @@
 // src/app/(dashboard)/layout.tsx
 
 import React from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/sidebar/sidebar";
+import Navbar from "@/components/navbar/navbar";
+
 
 
 export default function DashboardLayout({

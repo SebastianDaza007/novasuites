@@ -1,8 +1,7 @@
 "use client";
 
-
-import UserMenu from "./UserMenu";
-import NotificationsMenu, { Notificacion } from "./NotificationsMenu";
+import UserMenu from "../userMenu/userMenu";
+import NotificationsMenu, { Notificacion } from "../notificationsMenu/notificationsMenu";
 import { usePathname } from "next/navigation";
 
 type User = {
