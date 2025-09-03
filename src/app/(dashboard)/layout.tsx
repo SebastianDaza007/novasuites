@@ -2,7 +2,7 @@
 
 import React from "react";
 import Sidebar from "@/components/sidebar/sidebar";
-import Navbar from "@/components/navbar/navbar";
+import DashboardNavbar from "@/components/dashboardNavbar/dashboardNavbar";
 
 
 
@@ -27,7 +27,7 @@ export default function DashboardLayout({
       {/* Contenido principal */}
       <div className="flex-1 flex flex-col">
         {/* Navbar arriba */}
-        <Navbar
+        <DashboardNavbar
           idUsuario={5}   
           usuario={{ nombre: "Andrea" }}
           urlLogin="/login"
