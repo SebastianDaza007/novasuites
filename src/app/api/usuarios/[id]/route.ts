@@ -215,4 +215,22 @@ export async function DELETE(
       return NextResponse.json({
         success: false,
         message: 'ID inválido'
-      }, {
+      }, { status: 400 })
+    }
+
+    await prisma.user.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Usuario eliminado exitosamente'
+    })
+  } catch (error) {
+    console.error('Error deleting usuario:', error)
+    return NextResponse.json(
+      { success: false, message: 'Error al eliminar usuario' },
+      { status: 500 }
+    )
+  }
+}
