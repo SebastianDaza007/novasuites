@@ -63,7 +63,7 @@ CREATE TABLE "public"."tipo_movimiento" (
 -- CreateTable
 CREATE TABLE "public"."user" (
     "id" SERIAL NOT NULL,
-    "email" TEXT NOT NULL,
+    "email_proveedor" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE "public"."role" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_email_key" ON "public"."user"("email");
+CREATE UNIQUE INDEX "user_email_proveedor_key" ON "public"."user"("email_proveedor");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "role_name_key" ON "public"."role"("name");

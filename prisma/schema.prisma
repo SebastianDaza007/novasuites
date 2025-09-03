@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,264 +7,207 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Claude tablas
-// Tabla de Categorías para clasificar insumos
 model categoria {
-  id_categoria          Int       @id @default(autoincrement())
+  id_categoria          Int      @id @default(autoincrement())
   nombre_categoria      String
   descripcion_categoria String?
-  estado_categoria      Boolean   @default(true)
-  fecha_creacion        DateTime  @default(now())
-  insumos              insumo[]
-}
-
-// Tabla principal de insumos (refactorizada desde articulo)
-model insumo {
-  id_insumo             Int       @id @default(autoincrement())
-  nombre_insumo         String
-  descripcion_insumo    String?
-//  codigo_barras         String?   @unique
-//  unidad_medida         String    // litros, unidades, kilos, etc.
-  costo_unitario        Decimal   @db.Decimal(10,2)
-  fecha_expiracion      DateTime?
-  estado_insumo         Boolean   @default(true)
-  fecha_creacion        DateTime  @default(now())
-  fecha_actualizacion   DateTime  @updatedAt
-  
-  // Relaciones
-  id_categoria          Int?
-  id_proveedor          Int?
-  
-  categoria             categoria?           @relation(fields: [id_categoria], references: [id_categoria])
-  proveedor             proveedor?           @relation(fields: [id_proveedor], references: [id_proveedor])
-  stock_depositos       stock_deposito[]
-  alertas               alerta_stock[]
-  detalle_movimientos   detalle_movimiento_inventario[]
-  detalle_ordenes       detalle_orden_compra[]
-}
-
-// Tabla de proveedores
-model proveedor {
-  id_proveedor          Int       @id @default(autoincrement())
-  nombre_proveedor      String
-  cuit_proveedor        String    @unique
-  direccion_proveedor   String
-  telefono_proveedor    String?
-  correo_proveedor      String?
-  contacto_responsable  String?
-  condiciones_pago      String?
-  estado_proveedor      Boolean   @default(true)
-  observaciones         String?
-  fecha_creacion        DateTime  @default(now())
-  fecha_actualizacion   DateTime  @updatedAt
-  
-  // Relaciones
+  estado_categoria      Boolean  @default(true)
+  fecha_creacion        DateTime @default(now())
   insumos               insumo[]
-  ordenes_compra        orden_compra[]
-  facturas              factura_proveedor[]
 }
 
-// Tabla de depósitos (mejorada basada en tu estructura)
+model insumo {
+  id_insumo           Int                             @id @default(autoincrement())
+  costo_unitario      Decimal                         @db.Decimal(10, 2)
+  descripcion_insumo  String?
+  estado_insumo       Boolean                         @default(true)
+  fecha_actualizacion DateTime                        @updatedAt
+  fecha_creacion      DateTime                        @default(now())
+  fecha_expiracion    DateTime?
+  id_categoria        Int?
+  id_proveedor        Int?
+  nombre_insumo       String
+  alertas             alerta_stock[]
+  detalle_movimientos detalle_movimiento_inventario[]
+  detalle_ordenes     detalle_orden_compra[]
+  categoria           categoria?                      @relation(fields: [id_categoria], references: [id_categoria])
+  proveedor           proveedor?                      @relation(fields: [id_proveedor], references: [id_proveedor])
+  stock_depositos     stock_deposito[]
+}
+
+model proveedor {
+  id_proveedor         Int                 @id @default(autoincrement())
+  nombre_proveedor     String
+  cuit_proveedor       String              @unique
+  direccion_proveedor  String
+  telefono_proveedor   String?
+  correo_proveedor     String?
+  contacto_responsable String?
+  condiciones_pago     String?
+  estado_proveedor     Boolean             @default(true)
+  observaciones        String?
+  fecha_creacion       DateTime            @default(now())
+  fecha_actualizacion  DateTime            @updatedAt
+  facturas             factura_proveedor[]
+  insumos              insumo[]
+  ordenes_compra       orden_compra[]
+}
+
 model deposito {
-  id_deposito           Int       @id @default(autoincrement())
-  nom_deposito          String
-  tel_deposito          String?
-  dir_deposito          String?
-  responsable           String?
-  estado_deposito       Boolean   @default(true)
-  fecha_creacion        DateTime  @default(now())
-  
-  // Relaciones
-  stock_depositos       stock_deposito[]
-  alertas               alerta_stock[]       // ← AGREGADA
-  movimientos_origen    movimiento_inventario[] @relation("DepositoOrigen")
-  movimientos_destino   movimiento_inventario[] @relation("DepositoDestino")
+  id_deposito         Int                     @id @default(autoincrement())
+  nom_deposito        String
+  tel_deposito        String?
+  dir_deposito        String?
+  estado_deposito     Boolean                 @default(true)
+  fecha_creacion      DateTime                @default(now())
+  responsable         String?
+  alertas             alerta_stock[]
+  movimientos_destino movimiento_inventario[] @relation("DepositoDestino")
+  movimientos_origen  movimiento_inventario[] @relation("DepositoOrigen")
+  stock_depositos     stock_deposito[]
 }
 
-// Tabla de stock por depósito
 model stock_deposito {
-  id_stock              Int       @id @default(autoincrement())
-  cantidad_actual       Int       @default(0)
-  stock_minimo          Int       @default(0)
-  stock_critico         Int       @default(0)
-  fecha_ultimo_mov      DateTime?
-  
-  // Relaciones
-  id_deposito           Int
-  id_insumo             Int
-  
-  deposito              deposito  @relation(fields: [id_deposito], references: [id_deposito])
-  insumo                insumo    @relation(fields: [id_insumo], references: [id_insumo])
-  
+  id_stock         Int       @id @default(autoincrement())
+  cantidad_actual  Int       @default(0)
+  stock_minimo     Int       @default(0)
+  stock_critico    Int       @default(0)
+  fecha_ultimo_mov DateTime?
+  id_deposito      Int
+  id_insumo        Int
+  deposito         deposito  @relation(fields: [id_deposito], references: [id_deposito])
+  insumo           insumo    @relation(fields: [id_insumo], references: [id_insumo])
 }
 
-// Tabla de tipos de movimiento
 model tipo_movimiento {
-  id_tipo_movimiento    Int       @id @default(autoincrement())
-  nombre_tipo           String    @unique
-  descripcion           String?   // Ingreso, Consumo, Transferencia, Merma, Ajuste
-  afecta_stock          String    // POSITIVO, NEGATIVO, NEUTRO
-  estado_tipo           Boolean   @default(true)
-  
-  // Relaciones
-  razones               razon_movimiento[]
-  movimientos           movimiento_inventario[]
+  afecta_stock       String
+  descripcion        String?
+  estado_tipo        Boolean                 @default(true)
+  id_tipo_movimiento Int                     @id @default(autoincrement())
+  nombre_tipo        String                  @unique
+  movimientos        movimiento_inventario[]
+  razones            razon_movimiento[]
 }
 
-// Tabla de razones de movimiento
 model razon_movimiento {
-  id_razon              Int       @id @default(autoincrement())
-  nombre_razon          String
-  descripcion           String?
-  
-  // Relaciones
-  id_tipo_movimiento    Int
-  tipo_movimiento       tipo_movimiento @relation(fields: [id_tipo_movimiento], references: [id_tipo_movimiento])
-  movimientos           movimiento_inventario[]
+  id_razon           Int                     @id @default(autoincrement())
+  nombre_razon       String
+  descripcion        String?
+  id_tipo_movimiento Int
+  movimientos        movimiento_inventario[]
+  tipo_movimiento    tipo_movimiento         @relation(fields: [id_tipo_movimiento], references: [id_tipo_movimiento])
 }
 
-// Tabla principal de movimientos de inventario
 model movimiento_inventario {
-  id_movimiento         Int       @id @default(autoincrement())
-  fecha_movimiento      DateTime  @default(now())
-  numero_comprobante    String?
-  observaciones         String?
-  estado_movimiento     String    @default("COMPLETADO") // PENDIENTE, COMPLETADO, CANCELADO
-  
-  // Relaciones
-  id_deposito_origen    Int?
-  id_deposito_destino   Int?
-  id_tipo_movimiento    Int
-  id_razon_movimiento   Int?
-  id_usuario            Int
-  id_orden_compra       Int?      // Para movimientos de recepción
-  
-  deposito_origen       deposito?           @relation("DepositoOrigen", fields: [id_deposito_origen], references: [id_deposito])
-  deposito_destino      deposito?           @relation("DepositoDestino", fields: [id_deposito_destino], references: [id_deposito])
-  tipo_movimiento       tipo_movimiento     @relation(fields: [id_tipo_movimiento], references: [id_tipo_movimiento])
-  razon_movimiento      razon_movimiento?   @relation(fields: [id_razon_movimiento], references: [id_razon])
-  usuario               user                @relation(fields: [id_usuario], references: [id])
-  orden_compra          orden_compra?       @relation(fields: [id_orden_compra], references: [id_orden_compra])
-  
-  detalles              detalle_movimiento_inventario[]
+  id_movimiento       Int                             @id @default(autoincrement())
+  fecha_movimiento    DateTime                        @default(now())
+  numero_comprobante  String?
+  observaciones       String?
+  estado_movimiento   String                          @default("COMPLETADO")
+  id_deposito_origen  Int?
+  id_deposito_destino Int?
+  id_tipo_movimiento  Int
+  id_razon_movimiento Int?
+  id_usuario          Int
+  id_orden_compra     Int?
+  detalles            detalle_movimiento_inventario[]
+  deposito_destino    deposito?                       @relation("DepositoDestino", fields: [id_deposito_destino], references: [id_deposito])
+  deposito_origen     deposito?                       @relation("DepositoOrigen", fields: [id_deposito_origen], references: [id_deposito])
+  orden_compra        orden_compra?                   @relation(fields: [id_orden_compra], references: [id_orden_compra])
+  razon_movimiento    razon_movimiento?               @relation(fields: [id_razon_movimiento], references: [id_razon])
+  tipo_movimiento     tipo_movimiento                 @relation(fields: [id_tipo_movimiento], references: [id_tipo_movimiento])
+  usuario             user                            @relation(fields: [id_usuario], references: [id])
 }
 
-// Tabla de detalle de movimientos
 model detalle_movimiento_inventario {
-  id_detalle            Int       @id @default(autoincrement())
-  cantidad              Int
-  costo_unitario        Decimal?  @db.Decimal(10,2)
-  lote                  String?
-  fecha_vencimiento     DateTime?
-  
-  id_movimiento         Int
-  id_insumo             Int
-  
-  movimiento            movimiento_inventario @relation(fields: [id_movimiento], references: [id_movimiento])
-  insumo                insumo               @relation(fields: [id_insumo], references: [id_insumo])
+  id_detalle        Int                   @id @default(autoincrement())
+  cantidad          Int
+  costo_unitario    Decimal?              @db.Decimal(10, 2)
+  lote              String?
+  fecha_vencimiento DateTime?
+  id_movimiento     Int
+  id_insumo         Int
+  insumo            insumo                @relation(fields: [id_insumo], references: [id_insumo])
+  movimiento        movimiento_inventario @relation(fields: [id_movimiento], references: [id_movimiento])
 }
 
-// Tabla de órdenes de compra
 model orden_compra {
-  id_orden_compra       Int       @id @default(autoincrement())
-  numero_orden          String    @unique
-  fecha_orden           DateTime  @default(now())
+  id_orden_compra        Int                     @id @default(autoincrement())
+  numero_orden           String                  @unique
+  fecha_orden            DateTime                @default(now())
   fecha_entrega_estimada DateTime?
-  estado_orden          String    @default("PENDIENTE") // PENDIENTE, ENVIADA, RECIBIDA_PARCIAL, RECIBIDA_TOTAL, CANCELADA
-  total_orden           Decimal   @default(0) @db.Decimal(18,2)
-  observaciones         String?
-  fecha_creacion        DateTime  @default(now())
-  fecha_actualizacion   DateTime  @updatedAt
-  
-  // Relaciones
-  id_proveedor          Int
-  id_usuario_solicita   Int
-  
-  proveedor             proveedor            @relation(fields: [id_proveedor], references: [id_proveedor])
-  usuario_solicita      user                 @relation(fields: [id_usuario_solicita], references: [id])
-  
-  detalles              detalle_orden_compra[]
-  movimientos           movimiento_inventario[]
-  facturas              factura_proveedor[]
+  estado_orden           String                  @default("PENDIENTE")
+  total_orden            Decimal                 @default(0) @db.Decimal(18, 2)
+  observaciones          String?
+  fecha_creacion         DateTime                @default(now())
+  fecha_actualizacion    DateTime                @updatedAt
+  id_proveedor           Int
+  id_usuario_solicita    Int
+  detalles               detalle_orden_compra[]
+  facturas               factura_proveedor[]
+  movimientos            movimiento_inventario[]
+  proveedor              proveedor               @relation(fields: [id_proveedor], references: [id_proveedor])
+  usuario_solicita       user                    @relation(fields: [id_usuario_solicita], references: [id])
 }
 
-// Tabla de detalle de órdenes de compra
 model detalle_orden_compra {
-  id_detalle_orden      Int       @id @default(autoincrement())
-  cantidad_solicitada   Int
-  cantidad_recibida     Int       @default(0)
-  precio_unitario       Decimal   @db.Decimal(18,2)
-  subtotal              Decimal   @db.Decimal(18,2)
-  
-  // Relaciones
-  id_orden_compra       Int
-  id_insumo             Int
-  
-  orden_compra          orden_compra @relation(fields: [id_orden_compra], references: [id_orden_compra])
-  insumo                insumo       @relation(fields: [id_insumo], references: [id_insumo])
+  id_detalle_orden    Int          @id @default(autoincrement())
+  cantidad_solicitada Int
+  cantidad_recibida   Int          @default(0)
+  precio_unitario     Decimal      @db.Decimal(18, 2)
+  subtotal            Decimal      @db.Decimal(18, 2)
+  id_orden_compra     Int
+  id_insumo           Int
+  insumo              insumo       @relation(fields: [id_insumo], references: [id_insumo])
+  orden_compra        orden_compra @relation(fields: [id_orden_compra], references: [id_orden_compra])
 }
 
-// Tabla de facturas de proveedores
 model factura_proveedor {
-  id_factura            Int       @id @default(autoincrement())
-  numero_factura        String    @unique
-  fecha_emision         DateTime
-  fecha_vencimiento     DateTime
-  monto_total           Decimal   @db.Decimal(18,2)
-  estado_factura        String    @default("PENDIENTE") // PENDIENTE, PAGADA, VENCIDA, ANULADA
-  observaciones         String?
-  fecha_creacion        DateTime  @default(now())
-  fecha_actualizacion   DateTime  @updatedAt
-  
-  // Relaciones
-  id_proveedor          Int
-  id_orden_compra       Int?
-  
-  proveedor             proveedor     @relation(fields: [id_proveedor], references: [id_proveedor])
-  orden_compra          orden_compra? @relation(fields: [id_orden_compra], references: [id_orden_compra])
+  id_factura          Int           @id @default(autoincrement())
+  numero_factura      String        @unique
+  fecha_emision       DateTime
+  fecha_vencimiento   DateTime
+  monto_total         Decimal       @db.Decimal(18, 2)
+  estado_factura      String        @default("PENDIENTE")
+  observaciones       String?
+  fecha_creacion      DateTime      @default(now())
+  fecha_actualizacion DateTime      @updatedAt
+  id_proveedor        Int
+  id_orden_compra     Int?
+  orden_compra        orden_compra? @relation(fields: [id_orden_compra], references: [id_orden_compra])
+  proveedor           proveedor     @relation(fields: [id_proveedor], references: [id_proveedor])
 }
 
-// Tabla de alertas de stock
 model alerta_stock {
-  id_alerta             Int       @id @default(autoincrement())
-  tipo_alerta           String    // STOCK_MINIMO, STOCK_CRITICO, VENCIMIENTO_PROXIMO
-  mensaje               String
-  fecha_alerta          DateTime  @default(now())
-  estado_alerta         String    @default("ACTIVA") // ACTIVA, VISTA, RESUELTA
-  fecha_resolucion      DateTime?
-  
-  // Relaciones
-  id_insumo             Int
-  id_deposito           Int
-  id_usuario_asignado   Int?
-  
-  insumo                insumo    @relation(fields: [id_insumo], references: [id_insumo])
-  deposito              deposito  @relation(fields: [id_deposito], references: [id_deposito])
-  usuario_asignado      user?     @relation(fields: [id_usuario_asignado], references: [id])
+  id_alerta           Int       @id @default(autoincrement())
+  tipo_alerta         String
+  mensaje             String
+  fecha_alerta        DateTime  @default(now())
+  estado_alerta       String    @default("ACTIVA")
+  fecha_resolucion    DateTime?
+  id_insumo           Int
+  id_deposito         Int
+  id_usuario_asignado Int?
+  deposito            deposito  @relation(fields: [id_deposito], references: [id_deposito])
+  insumo              insumo    @relation(fields: [id_insumo], references: [id_insumo])
+  usuario_asignado    user?     @relation(fields: [id_usuario_asignado], references: [id])
 }
 
-// Tabla de usuarios
 model user {
-  id                    Int       @id @default(autoincrement())
-  email                 String    @unique
-  password              String
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
-  roleId                Int
-  
-  role                  role      @relation(fields: [roleId], references: [id])
-  
-  // Relaciones con insumos
+  id                     Int                     @id @default(autoincrement())
+  email                  String                  @unique
+  password               String
+  created_at             DateTime                @default(now())
+  updated_at             DateTime                @updatedAt
+  roleId                 Int
+  alertas_asignadas      alerta_stock[]
   movimientos_inventario movimiento_inventario[]
-  ordenes_compra        orden_compra[]
-  alertas_asignadas     alerta_stock[]
+  ordenes_compra         orden_compra[]
+  role                   role                    @relation(fields: [roleId], references: [id])
 }
-
 
 model role {
   id    Int    @id @default(autoincrement())
   name  String @unique
-
   users user[]
 }
-

@@ -101,9 +101,9 @@ CREATE TABLE "public"."categoria" (
 CREATE TABLE "public"."proveedor" (
     "id_proveedor" SERIAL NOT NULL,
     "nombre_proveedor" TEXT NOT NULL,
-    "cuit_proveedor" TEXT NOT NULL,
-    "direccion_proveedor" TEXT NOT NULL,
-    "telefono_proveedor" TEXT,
+    "cuit_proveedor_proveedor" TEXT NOT NULL,
+    "direccion_proveedor_proveedor" TEXT NOT NULL,
+    "telefono_proveedor_proveedor" TEXT,
     "correo_proveedor" TEXT,
     "contacto_responsable" TEXT,
     "condiciones_pago" TEXT,
@@ -231,7 +231,7 @@ CREATE TABLE "public"."alerta_stock" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "proveedor_cuit_proveedor_key" ON "public"."proveedor"("cuit_proveedor");
+CREATE UNIQUE INDEX "proveedor_cuit_proveedor_proveedor_key" ON "public"."proveedor"("cuit_proveedor_proveedor");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "orden_compra_numero_orden_key" ON "public"."orden_compra"("numero_orden");
