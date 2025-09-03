@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createInsumoSchema = z.object({
   nombre_insumo: z.string().min(1, 'El nombre es requerido'),
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const categoria = searchParams.get('categoria')
 
-    const where: any = {
+    const where: Prisma.insumoWhereInput = {
       estado_insumo: true,
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createCategoriaSchema = z.object({
   nombre_categoria: z.string().min(1, 'El nombre es requerido'),
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const estado = searchParams.get('estado')
     const includeInsumos = searchParams.get('includeInsumos') === 'true'
 
-    const where: any = {}
+    const where: Prisma.categoriaWhereInput = {}
     if (estado !== null) {
       where.estado_categoria = estado === 'true'
     }

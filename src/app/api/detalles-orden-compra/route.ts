@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createDetalleSchema = z.object({
   cantidad_solicitada: z.number().int().positive('La cantidad solicitada debe ser mayor a 0'),
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
 
-    const whereClause: any = {}
+    const whereClause: Prisma.detalle_orden_compraWhereInput = {}
     
     if (ordenCompraId) {
       whereClause.id_orden_compra = parseInt(ordenCompraId)

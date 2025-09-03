@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const detalleOrdenSchema = z.object({
   id_insumo: z.number().int().positive('ID de insumo inválido'),
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     const fechaDesde = searchParams.get('fechaDesde')
     const fechaHasta = searchParams.get('fechaHasta')
 
-    const where: any = {}
+    const where: Prisma.orden_compraWhereInput = {}
 
     if (estado) {
       where.estado_orden = estado

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createDepositoSchema = z.object({
   nom_deposito: z.string().min(1, 'El nombre es requerido'),
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const includeStock = searchParams.get('includeStock') === 'true'
     const includeAlertas = searchParams.get('includeAlertas') === 'true'
 
-    const where: any = {}
+    const where: Prisma.depositoWhereInput = {}
     if (estado !== null) {
       where.estado_deposito = estado === 'true'
     }

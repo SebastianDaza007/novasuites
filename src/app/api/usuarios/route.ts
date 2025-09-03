@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 
 const createUsuarioSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const roleId = searchParams.get('role')
     const search = searchParams.get('search') || ''
 
-    const where: any = {}
+    const where: Prisma.userWhereInput = {}
 
     if (roleId) {
       where.roleId = parseInt(roleId)

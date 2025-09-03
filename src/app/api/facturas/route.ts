@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createFacturaSchema = z.object({
   numero_factura: z.string().min(1, 'El número de factura es requerido'),
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     const fechaHasta = searchParams.get('fechaHasta')
     const vencidas = searchParams.get('vencidas') === 'true'
 
-    const where: any = {}
+    const where: Prisma.factura_proveedorWhereInput = {}
 
     if (estado) {
       where.estado_factura = estado

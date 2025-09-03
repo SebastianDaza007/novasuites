@@ -151,7 +151,7 @@ export async function PUT(
     }
 
     // Preparar datos para actualización
-    const updateData: any = {}
+    const updateData: { email?: string; password?: string; roleId?: number } = {}
     
     if (validatedData.email) {
       updateData.email = validatedData.email

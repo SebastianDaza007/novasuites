@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createStockDepositoSchema = z.object({
   id_deposito: z.number().int().positive('ID de depósito inválido'),
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const alertasCriticas = searchParams.get('alertasCriticas') === 'true'
     const stockBajo = searchParams.get('stockBajo') === 'true'
 
-    const where: any = {}
+    const where: Prisma.stock_depositoWhereInput = {}
 
     if (depositoId) {
       where.id_deposito = parseInt(depositoId)

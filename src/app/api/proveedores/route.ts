@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createProveedorSchema = z.object({
   nombre_proveedor: z.string().min(1, 'El nombre es requerido'),
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const estado = searchParams.get('estado')
 
-    const where: any = {}
+    const where: Prisma.proveedorWhereInput = {}
     
     if (estado !== null) {
       where.estado_proveedor = estado === 'true'

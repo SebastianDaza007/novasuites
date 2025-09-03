@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const createAlertaStockSchema = z.object({
   tipo_alerta: z.enum(['STOCK_MINIMO', 'STOCK_CRITICO', 'VENCIMIENTO_PROXIMO']),
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    const where: any = {}
+    const where: Prisma.alerta_stockWhereInput = {}
 
     if (estado) {
       where.estado_alerta = estado

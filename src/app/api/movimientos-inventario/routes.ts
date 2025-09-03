@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '../../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const detalleMovimientoSchema = z.object({
   id_insumo: z.number().int().positive('ID de insumo inválido'),
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     const fechaDesde = searchParams.get('fechaDesde')
     const fechaHasta = searchParams.get('fechaHasta')
 
-    const where: any = {}
+    const where: Prisma.movimiento_inventarioWhereInput = {}
 
     if (depositoId) {
       where.OR = [
@@ -199,7 +200,11 @@ export async function POST(request: NextRequest) {
 }
 
 // Función auxiliar para actualizar stock
-async function actualizarStock(tx: any, movimiento: any, detalles: any[]) {
+async function actualizarStock(
+  tx: Prisma.TransactionClient, 
+  movimiento: { id_tipo_movimiento: number; id_deposito_origen?: number | null; id_deposito_destino?: number | null }, 
+  detalles: { id_insumo: number; cantidad: number }[]
+) {
   const tipoMovimiento = await tx.tipo_movimiento.findUnique({
     where: { id_tipo_movimiento: movimiento.id_tipo_movimiento }
   })
