@@ -209,6 +209,10 @@ async function actualizarStock(
     where: { id_tipo_movimiento: movimiento.id_tipo_movimiento }
   })
 
+  if (!tipoMovimiento) {
+    throw new Error('Tipo de movimiento no encontrado')
+  }
+
   for (const detalle of detalles) {
     // Actualizar stock según el tipo de movimiento
     if (tipoMovimiento.afecta_stock === 'POSITIVO') {
