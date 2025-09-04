@@ -1,34 +1,20 @@
 "use client";
 
 import React from "react";
-import { Button as PrimeButton } from "primereact/button";
+import { Button as PrimeButton, ButtonProps as PrimeButtonProps } from "primereact/button";
 
-type ButtonProps = {
-    label: string;                        
-    onClick?: () => void;                 
-    icon?: string;                        
-    severity?: "secondary" | "success" | "info" | "warning" | "danger" | "help" | "contrast";
-    disabled?: boolean;                   
-    className?: string;                   
+// Extendemos el tipo para incluir todas las props de PrimeButton
+type ButtonProps = PrimeButtonProps & {
+    label?: string; // opcional, ya que algunas veces solo usamos icon
 };
 
-const Button: React.FC<ButtonProps> = ({
-    label,
-    onClick,
-    icon,
-    severity = "secondary", // 👈 default válido
-    disabled = false,
-    className = "",
-    }) => {
+const Button: React.FC<ButtonProps> = ({ label, ...props }) => {
     return (
-    <PrimeButton
-        label={label}
-        icon={icon}
-        severity={severity}
-        onClick={onClick}
-        disabled={disabled}
-        className={`0.5rem 0.2rem rounded-xl shadow-md font-bold ${className}`} // 👆 estilo base + tu className
-    />
+        <PrimeButton
+            label={label}
+            {...props} // todas las demás props van directo a PrimeButton
+            className={`0.5rem 0.2rem rounded-xl shadow-md font-bold ${props.className ?? ""}`}
+        />
     );
 };
 
