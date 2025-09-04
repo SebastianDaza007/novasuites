@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { z } from 'zod'
 
 interface Context {
   params: {
     id: string
   }
 }
+
+const updateInsumoSchema = z.object({
+  nombre_insumo: z.string().min(1, 'El nombre es requerido').optional(),
+  descripcion_insumo: z.string().optional(),
+  costo_unitario: z.number().positive('El costo debe ser positivo').optional(),
+  fecha_expiracion: z.string().datetime().optional(),
+  id_categoria: z.number().int().positive('La categoría es requerida').optional(),
+  id_proveedor: z.number().optional(),
+})
 
 // GET /api/insumos/[id] - Obtener insumo específico
 export async function GET(request: NextRequest, { params }: Context) {
@@ -55,14 +65,15 @@ export async function PUT(request: NextRequest, { params }: Context) {
   try {
     const id = parseInt(params.id)
     const body = await request.json()
+    const validatedData = updateInsumoSchema.parse(body)
 
     const insumoActualizado = await prisma.insumo.update({
       where: { id_insumo: id },
       data: {
-        ...body,
-        fecha_expiracion: body.fecha_expiracion 
-          ? new Date(body.fecha_expiracion) 
-          : null
+        ...validatedData,
+        fecha_expiracion: validatedData.fecha_expiracion 
+          ? new Date(validatedData.fecha_expiracion) 
+          : undefined
       },
       include: {
         categoria: true,
@@ -76,6 +87,14 @@ export async function PUT(request: NextRequest, { params }: Context) {
       message: 'Insumo actualizado exitosamente'
     })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        success: false,
+        message: 'Datos inválidos',
+        errors: error.issues
+      }, { status: 400 })
+    }
+    
     console.error('Error updating insumo:', error)
     return NextResponse.json(
       { success: false, message: 'Error al actualizar insumo' },

@@ -93,7 +93,7 @@ export async function GET(
       total_insumos: movimiento.detalles.length,
       total_cantidad: movimiento.detalles.reduce((sum, detalle) => sum + detalle.cantidad, 0),
       costo_total: movimiento.detalles.reduce((sum, detalle) => 
-        sum + (detalle.cantidad * (detalle.costo_unitario || 0)), 0)
+        sum + (detalle.cantidad * Number(detalle.costo_unitario || 0)), 0)
     }
 
     return NextResponse.json({

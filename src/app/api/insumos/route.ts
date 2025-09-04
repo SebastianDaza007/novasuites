@@ -8,7 +8,7 @@ const createInsumoSchema = z.object({
   descripcion_insumo: z.string().optional(),
   costo_unitario: z.number().positive('El costo debe ser positivo'),
   fecha_expiracion: z.string().datetime().optional(),
-  id_categoria: z.number().optional(),
+  id_categoria: z.number().int().positive('La categoría es requerida'),
   id_proveedor: z.number().optional(),
 })
 
