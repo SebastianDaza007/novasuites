@@ -1,23 +1,23 @@
-// src/app/(dashboard)/layout.tsx
-"use client"
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Sidebar from "@/components/sidebar/sidebar";
 import DashboardNavbar from "@/components/dashboardNavbar/dashboardNavbar";
-
-
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Estado para controlar sidebar en mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const sidebarItems = [
     { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
     { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Registrar Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" }]},
     { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "registrar/editar proveedor",  path: "/proveedores" }]},
     { icon: "pi-chart-line", label: "Reportes", path: "/reportes" , options: [{ name: "Facturas", path: "/facturas" }]},
   ];
-
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -30,7 +30,7 @@ export default function DashboardLayout({
         
         {/* Navbar arriba */}
         <DashboardNavbar
-          idUsuario={5}   
+          idUsuario={5}
           usuario={{ nombre: "Andrea" }}
           urlLogin="/login"
           urlRegistro="/registro"
@@ -48,6 +48,7 @@ export default function DashboardLayout({
               visto: true,
             },
           ]}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
 
         {/* Contenido de la página */}

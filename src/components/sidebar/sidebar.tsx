@@ -24,9 +24,13 @@ export default function Sidebar({ title, items }: SidebarProps) {
   return (
     <aside
       className={classNames(
-        "bg-gray-900 text-white h-screen transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        "h-screen shadow-sm transition-all duration-300 flex flex-col",
+        collapsed ? "w-16" : "w-64",
+        "bg-[var(--background)] text-[var(--foreground)] border-r"
       )}
+      style={{
+        borderRight: "1px solid var(--border)",
+      }}
     >
       {/* Encabezado */}
       <div className="flex items-center justify-between p-4">
