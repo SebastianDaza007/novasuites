@@ -17,7 +17,13 @@ type SidebarProps = {
 
 export default function Sidebar({ title, items }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [showProveedorDropdown, setShowProveedorDropdown] = useState(false);
   const router = useRouter();
+
+  const proveedorOptions = [
+    { name: "Registrar/Editar Proveedor", code: "EDIT", path: "/proveedores" },
+    { name: "Cargar Facturas", code: "INVOICE", path: "/facturas" },
+  ];
 
   return (
     <aside
@@ -57,17 +63,51 @@ export default function Sidebar({ title, items }: SidebarProps) {
       {/* Lista de opciones */}
       <nav className="mt-6 flex-1 flex flex-col gap-1">
         {items.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-4 px-6 py-3 cursor-pointer text-base md:text-lg font-medium rounded-lg transition-colors hover:bg-[var(--border)]/20"
-            style={{ color: "var(--foreground)" }}
-            onClick={() => router.push(item.path)}
-          >
-            <i
-              className={classNames("pi text-xl md:text-2xl", item.icon)}
+          <div key={index}>
+            <div
+              className="flex items-center gap-4 px-6 py-3 cursor-pointer text-base md:text-lg font-medium rounded-lg transition-colors hover:bg-[var(--border)]/20"
               style={{ color: "var(--foreground)" }}
-            ></i>
-            {!collapsed && <span className="truncate">{item.label}</span>}
+              onClick={() => {
+                if (item.label === "Proveedores") {
+                  setShowProveedorDropdown(!showProveedorDropdown);
+                } else {
+                  router.push(item.path);
+                }
+              }}
+            >
+              <i
+                className={classNames("pi text-xl md:text-2xl", item.icon)}
+                style={{ color: "var(--foreground)" }}
+              ></i>
+              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && item.label === "Proveedores" && (
+                <i
+                  className={classNames(
+                    "pi ml-auto",
+                    showProveedorDropdown ? "pi-chevron-up" : "pi-chevron-down"
+                  )}
+                ></i>
+              )}
+            </div>
+
+            {/* Submenu Proveedores */}
+            {!collapsed &&
+              item.label === "Proveedores" &&
+              showProveedorDropdown && (
+                <div className="ml-10 flex flex-col gap-1">
+                  {proveedorOptions.map((option, optionIndex) => (
+                    <div
+                      key={optionIndex}
+                      className="flex items-center gap-3 px-4 py-2 cursor-pointer text-sm rounded-md transition-colors hover:bg-[var(--border)]/30"
+                      style={{ color: "var(--foreground)" }}
+                      onClick={() => router.push(option.path)}
+                    >
+                      <i className="pi pi-circle text-xs"></i>
+                      <span>{option.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
         ))}
       </nav>

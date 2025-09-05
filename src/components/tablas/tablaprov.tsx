@@ -13,7 +13,11 @@ interface Proveedor {
     direccion: string;
 }
 
-const TablaProveedores = () => {
+interface TablaProveedoresProps {
+    onEdit?: (proveedor: Proveedor) => void;
+}
+
+const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
     const [globalFilter, setGlobalFilter] = useState('');
     
     const header = (
@@ -50,7 +54,11 @@ const TablaProveedores = () => {
     ];
 
     const handleEditar = (proveedor: Proveedor) => {
-        console.log('Editar proveedor:', proveedor);
+        if (onEdit) {
+            onEdit(proveedor);
+        } else {
+            console.log('Editar proveedor:', proveedor);
+        }
     };
 
     const handleEliminar = (proveedor: Proveedor) => {
