@@ -8,7 +8,7 @@ type SidebarItem = {
   icon: string;
   label: string;
   path: string;
-  options: { name: string; code: string; path: string }[] | null;
+  options: { name: string; path: string }[] | null;
 };
 
 type SidebarProps = {

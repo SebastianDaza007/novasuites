@@ -13,9 +13,9 @@ export default function DashboardLayout({
 }) {
   const sidebarItems = [
     { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
-    { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Registrar Insumos", code: "", path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" }]},
-    { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "registrar/editar proveedor", code: "", path: "/proveedores" }]},
-    { icon: "pi-chart-line", label: "Reportes", path: "/reportes" , options: [{ name: "Facturas", code: "", path: "/facturas" }]},
+    { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Registrar Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" }]},
+    { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "registrar/editar proveedor",  path: "/proveedores" }]},
+    { icon: "pi-chart-line", label: "Reportes", path: "/reportes" , options: [{ name: "Facturas", path: "/facturas" }]},
   ];
 
 
@@ -52,8 +52,7 @@ export default function DashboardLayout({
 
         {/* Contenido de la página */}
         {/* <main className="flex-1 p-6 bg-gray-100 overflow-auto"> */}
-        <main className="flex-1 h-full overflow-auto p-6 bg-white">
-
+        <main className="flex-1 h-full overflow-auto p-0 bg-white">
           {children}
         </main>      
       </div>
