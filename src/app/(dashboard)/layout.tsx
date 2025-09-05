@@ -12,8 +12,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const sidebarItems = [
-    { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
-    { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Registrar Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" }]},
+    // { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
+    { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Ver Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" }]},
     { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "registrar/editar proveedor",  path: "/proveedores" }]},
     { icon: "pi-chart-line", label: "Reportes", path: "/reportes" , options: [{ name: "Facturas", path: "/facturas" }]},
   ];
