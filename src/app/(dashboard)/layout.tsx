@@ -1,5 +1,5 @@
 // src/app/(dashboard)/layout.tsx
-
+"use client"
 import React from "react";
 import Sidebar from "@/components/sidebar/sidebar";
 import DashboardNavbar from "@/components/dashboardNavbar/dashboardNavbar";

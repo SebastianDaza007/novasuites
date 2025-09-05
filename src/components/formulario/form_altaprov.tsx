@@ -1,8 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "primereact/button";
 
-export default function ProveedorForm() {
+interface ProveedorFormProps {
+  proveedor?: any;
+  onClose?: () => void;
+}
+
+export default function ProveedorForm({ proveedor, onClose }: ProveedorFormProps) {
   const [formData, setFormData] = useState({
     nombre_proveedor: "",
     cuit_proveedor: "",
@@ -17,9 +22,35 @@ export default function ProveedorForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const maxWords = 20; // límite de palabras en observaciones
+
+  // Populate form when editing existing proveedor
+  useEffect(() => {
+    if (proveedor) {
+      setFormData({
+        nombre_proveedor: proveedor.nombre || "",
+        cuit_proveedor: proveedor.cuit || "",
+        correo_proveedor: proveedor.email || "",
+        telefono_proveedor: proveedor.telefono || "",
+        direccion_proveedor: proveedor.direccion || "",
+        contacto_responsable: "",
+        condiciones_pago: "",
+        observaciones: "",
+      });
+    }
+  }, [proveedor]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === "observaciones") {
+      const words = value.trim().split(/\s+/);
+      if (words.length > maxWords) return; // no permite más de maxWords
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +67,7 @@ export default function ProveedorForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Error al guardar el proveedor");
+        throw new Error(errorData.message || "Error al guardar el proveedor");
       }
 
       await response.json();
@@ -53,13 +84,28 @@ export default function ProveedorForm() {
         condiciones_pago: "",
         observaciones: "",
       });
+      
+      // Close modal after successful save
+      if (onClose) {
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
     } catch (error) {
       console.error("Error:", error);
-      alert(error instanceof Error ? error.message : "Error al procesar la solicitud");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Error al procesar la solicitud"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  const observacionesWordCount = formData.observaciones.trim()
+    ? formData.observaciones.trim().split(/\s+/).length
+    : 0;
 
   return (
     <form
@@ -73,7 +119,7 @@ export default function ProveedorForm() {
         type="text"
         placeholder="Nombre de proveedor"
         required
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
       />
       <input
         name="cuit_proveedor"
@@ -83,7 +129,7 @@ export default function ProveedorForm() {
         placeholder="CUIT (XX-XXXXXXXX-X)"
         pattern="[0-9]{2}-[0-9]{8}-[0-9]"
         required
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500  text-gray-800"
       />
       <input
         name="correo_proveedor"
@@ -91,7 +137,7 @@ export default function ProveedorForm() {
         onChange={handleChange}
         type="email"
         placeholder="Email (opcional)"
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
       />
       <input
         name="telefono_proveedor"
@@ -99,7 +145,7 @@ export default function ProveedorForm() {
         onChange={handleChange}
         type="tel"
         placeholder="Teléfono (opcional)"
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
       />
       <input
         name="direccion_proveedor"
@@ -107,7 +153,7 @@ export default function ProveedorForm() {
         onChange={handleChange}
         type="text"
         placeholder="Dirección (opcional)"
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
       />
       <input
         name="contacto_responsable"
@@ -115,7 +161,7 @@ export default function ProveedorForm() {
         onChange={handleChange}
         type="text"
         placeholder="Contacto Responsable (opcional)"
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
       />
       <input
         name="condiciones_pago"
@@ -123,16 +169,27 @@ export default function ProveedorForm() {
         onChange={handleChange}
         type="text"
         placeholder="Condiciones de Pago (opcional)"
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
+        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
       />
-      <input
-        name="observaciones"
-        value={formData.observaciones}
-        onChange={handleChange}
-        type="text"
-        placeholder="Observaciones (opcional)"
-        className="appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500"
-      />
+    
+      {/* ✅ Observaciones como textarea con contador de palabras */}
+      <div className="flex flex-col">
+        <textarea
+          name="observaciones"
+          value={formData.observaciones}
+          onChange={handleChange}
+          placeholder="Observaciones (opcional)"
+          rows={5}
+          className="w-full appearance-none border border-gray-300 py-3 px-4 rounded-lg focus:border-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500 text-gray-800"
+        />
+        <p
+          className={`text-sm mt-1 ${
+            observacionesWordCount >= maxWords ? "text-red-500" : "text-gray-500"
+          }`}
+        >
+          {observacionesWordCount}/{maxWords} palabras
+        </p>
+      </div>
 
       <div className="flex gap-4 mt-4">
         <Button
@@ -150,9 +207,9 @@ export default function ProveedorForm() {
           label="Cancelar"
           icon="pi pi-times"
           type="button"
-          className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+          className="px-10 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
           severity="danger"
-          onClick={() =>
+          onClick={() => {
             setFormData({
               nombre_proveedor: "",
               cuit_proveedor: "",
@@ -162,8 +219,11 @@ export default function ProveedorForm() {
               contacto_responsable: "",
               condiciones_pago: "",
               observaciones: "",
-            })
-          }
+            });
+            if (onClose) {
+              onClose();
+            }
+          }}
         />
       </div>
     </form>
