@@ -1,29 +1,59 @@
 @import "tailwindcss";
-@import "primereact/resources/themes/lara-dark-indigo/theme.css";
+@import "primereact/resources/themes/soho-light/theme.css"; 
 @import "primereact/resources/primereact.min.css";
 @import "primeicons/primeicons.css";
 
+/* === Variables base (modo claro) === */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1f2937; /* gris oscuro elegante */
+  --primary: #0d9488; /* teal */
+  --primary-hover: #0f766e;
+  --border: #e5e7eb; /* gris claro sutil para bordes */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Menlo", "Consolas", "Liberation Mono", "Courier New", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* === Variables para modo oscuro === */
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #e5e7eb; /* gris claro */
+  --primary: #14b8a6; /* teal más vivo */
+  --primary-hover: #0d9488;
+  --border: #374151; /* gris oscuro sutil */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* === Overrides para PrimeReact usando variables === */
+.p-button {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+.p-button:hover {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+/* Inputs y Cards */
+.p-inputtext,
+.p-dropdown,
+.p-calendar,
+.p-password,
+.p-autocomplete {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--foreground) !important;
+}
+.p-card {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--foreground) !important;
 }
