@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Toast } from 'primereact/toast';
+import { useRef } from 'react';
 import CategoryDropdown from "@/components/lista desplegable/lista_desplegable";
 import Button from "@/components/botones/button";
 import TextInput from "@/components/inputs/textinput";
@@ -10,6 +13,10 @@ import DateInput from "@/components/inputs/inputfecha";
 import ToggleInput from "@/components/inputs/toggleinput";
 
 export default function FormularioNuevoInsumo() {
+  const router = useRouter();
+  const toast = useRef<Toast>(null);
+  
+  // Estados del formulario
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [nombreIns, setNombre] = useState("");
   const [precio, setPrecio] = useState<number | null>(0);
@@ -17,14 +24,152 @@ export default function FormularioNuevoInsumo() {
   const [fecha, setFecha] = useState("");
   const [activo, setActivo] = useState("Activo");
   const [critico, setCritico] = useState<number | null>(0);
+  
+  // Estados de control
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Función de validación
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!nombreIns.trim()) {
+      newErrors.nombreIns = "El nombre del insumo es requerido";
+    }
+    
+    if (!selectedCategory) {
+      newErrors.categoria = "La categoría es requerida";
+    }
+    
+    if (!precio || precio <= 0) {
+      newErrors.precio = "El precio debe ser mayor a 0";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Función para limpiar formulario
+  const limpiarFormulario = () => {
+    setNombre("");
+    setSelectedCategory(null);
+    setPrecio(0);
+    setDescripcion("");
+    setFecha("");
+    setActivo("Activo");
+    setCritico(0);
+    setErrors({});
+  };
+
+  // Función para convertir fecha DD/MM/YYYY a formato ISO datetime
+  const convertirFecha = (fechaString: string): string | undefined => {
+    if (!fechaString || fechaString.length !== 10) return undefined;
+    
+    const [day, month, year] = fechaString.split('/');
+    if (!day || !month || !year) return undefined;
+    
+    // Crear fecha en formato YYYY-MM-DD y agregar hora 00:00:00
+    const fechaISO = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00.000Z`;
+    
+    // Verificar que la fecha sea válida
+    const date = new Date(fechaISO);
+    if (isNaN(date.getTime())) return undefined;
+    
+    return fechaISO;
+  };
+
+  // Función de envío
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error de validación',
+        detail: 'Por favor, corrige los campos marcados',
+        life: 3000
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const payload = {
+        nombre_insumo: nombreIns.trim(),
+        descripcion_insumo: descripcion.trim() || undefined,
+        costo_unitario: precio,
+        fecha_expiracion: convertirFecha(fecha),
+        id_categoria: selectedCategory,
+        // id_proveedor se podría agregar más tarde si es necesario
+      };
+
+      // Debug: mostrar lo que se está enviando
+      console.log('Payload enviado:', payload);
+
+      const response = await fetch('/api/insumos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      console.log('Respuesta del servidor:', data);
+
+      if (data.success) {
+        toast.current?.show({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: 'Insumo creado exitosamente',
+          life: 3000
+        });
+        
+        limpiarFormulario();
+        
+        // Opcional: redirigir después de un tiempo
+        setTimeout(() => {
+          router.push('/movimientos-insumos');
+        }, 2000);
+        
+      } else {
+        // Mostrar errores de validación si existen
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessages = data.errors.map((err: any) => err.message).join(', ');
+          throw new Error(`Errores de validación: ${errorMessages}`);
+        }
+        throw new Error(data.message || 'Error al crear insumo');
+      }
+      
+    } catch (error) {
+      console.error('Error:', error);
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: error instanceof Error ? error.message : 'Error inesperado al crear insumo',
+        life: 4000
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full px-4 mt-4">
+      <Toast ref={toast} />
 
-      {/* Botón externo a la derecha */}
-      <div className="w-full flex justify-end mb-4">
+      {/* Botones externos a la derecha */}
+      <div className="w-full flex justify-end gap-3 mb-4">
+        <Button
+          label="Ver Movimientos"
+          icon="pi pi-history"
+          severity="info"
+          className="w-40 h-10 text-sm"
+          onClick={() => router.push('/movimientos-insumos')}
+        />
         <Button
           label="Nuevo Insumo"
+          icon="pi pi-plus"
           severity="secondary"
           className="w-32 h-10 text-sm"
           onClick={() => console.log("Botón externo presionado")}
@@ -110,12 +255,20 @@ export default function FormularioNuevoInsumo() {
             />
           </div>
 
-          {/* Botón Agregar separado hacia la derecha */}
-          <div className="mt-6 flex justify-end">
+          {/* Botones Limpiar y Agregar separados hacia la derecha */}
+          <div className="mt-6 flex justify-end gap-3">
             <Button
-              label="Agregar"
+              label="Limpiar"
+              severity="secondary"
+              onClick={limpiarFormulario}
+              disabled={loading}
+            />
+            <Button
+              label={loading ? "Guardando..." : "Agregar"}
               severity="success"
-              onClick={() => console.log("Botón presionado")}
+              loading={loading}
+              onClick={handleSubmit}
+              disabled={loading}
             />
           </div>
 

@@ -18,6 +18,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const movimientoId = searchParams.get('movimiento_id')
     const insumoId = searchParams.get('insumo_id')
+    const tipoMovimiento = searchParams.get('tipoMovimiento')
+    const fechaDesde = searchParams.get('fechaDesde')
+    const fechaHasta = searchParams.get('fechaHasta')
+    const categoriaId = searchParams.get('categoria')
+    const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
@@ -30,6 +35,46 @@ export async function GET(request: NextRequest) {
     
     if (insumoId) {
       whereClause.id_insumo = parseInt(insumoId)
+    }
+
+    // Filtros para la página de movimientos
+    if (tipoMovimiento || fechaDesde || fechaHasta) {
+      whereClause.movimiento = {}
+      
+      if (tipoMovimiento) {
+        whereClause.movimiento.id_tipo_movimiento = parseInt(tipoMovimiento)
+      }
+      
+      if (fechaDesde || fechaHasta) {
+        whereClause.movimiento.fecha_movimiento = {}
+        
+        if (fechaDesde) {
+          whereClause.movimiento.fecha_movimiento.gte = new Date(fechaDesde + 'T00:00:00.000Z')
+        }
+        
+        if (fechaHasta) {
+          whereClause.movimiento.fecha_movimiento.lte = new Date(fechaHasta + 'T23:59:59.999Z')
+        }
+      }
+    }
+
+    // Filtro por categoría del insumo
+    if (categoriaId) {
+      whereClause.insumo = {
+        ...whereClause.insumo,
+        id_categoria: parseInt(categoriaId)
+      }
+    }
+
+    // Filtro de búsqueda por nombre de insumo
+    if (search) {
+      whereClause.insumo = {
+        ...whereClause.insumo,
+        nombre_insumo: {
+          contains: search,
+          mode: 'insensitive' // Búsqueda case-insensitive
+        }
+      }
     }
 
     const [detalles, total] = await Promise.all([
@@ -65,7 +110,13 @@ export async function GET(request: NextRequest) {
               id_insumo: true,
               nombre_insumo: true,
               descripcion_insumo: true,
-              costo_unitario: true
+              costo_unitario: true,
+              categoria: {
+                select: {
+                  id_categoria: true,
+                  nombre_categoria: true
+                }
+              }
             }
           }
         },

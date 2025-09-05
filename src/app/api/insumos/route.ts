@@ -95,8 +95,26 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('Body recibido:', body)
+    
     const validatedData = createInsumoSchema.parse(body)
+    console.log('Datos validados:', validatedData)
 
+    // Verificar que la categoría existe
+    if (validatedData.id_categoria) {
+      const categoriaExiste = await prisma.categoria.findUnique({
+        where: { id_categoria: validatedData.id_categoria }
+      })
+      
+      if (!categoriaExiste) {
+        return NextResponse.json({
+          success: false,
+          message: `La categoría con ID ${validatedData.id_categoria} no existe`
+        }, { status: 400 })
+      }
+    }
+
+    // Crear el insumo (el trigger se encarga automáticamente del movimiento)
     const nuevoInsumo = await prisma.insumo.create({
       data: {
         ...validatedData,
@@ -113,10 +131,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: nuevoInsumo,
-      message: 'Insumo creado exitosamente'
+      message: 'Insumo creado exitosamente (movimiento registrado automáticamente)'
     }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Error de validación Zod:', error.issues)
       return NextResponse.json({
         success: false,
         message: 'Datos inválidos',
@@ -124,9 +143,34 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    console.error('Error creating insumo:', error)
+    // Log detallado del error para debugging
+    console.error('Error creating insumo - Full error:', error)
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    
+    // Error más específico basado en el tipo de error de Prisma
+    if (error instanceof Error) {
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json({
+          success: false,
+          message: 'Error de relación: verifique que la categoría seleccionada existe'
+        }, { status: 400 })
+      }
+      
+      if (error.message.includes('Unique constraint')) {
+        return NextResponse.json({
+          success: false,
+          message: 'Ya existe un insumo con ese nombre'
+        }, { status: 400 })
+      }
+    }
+
     return NextResponse.json(
-      { success: false, message: 'Error al crear insumo' },
+      { 
+        success: false, 
+        message: 'Error interno del servidor al crear insumo',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     )
   }

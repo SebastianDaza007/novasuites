@@ -14,6 +14,7 @@ export default function DashboardLayout({
   const sidebarItems = [
     { icon: "pi-box", label: "Depósito", path: "/deposito" },
     { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" },
+    { icon: "pi-history", label: "Movimientos", path: "/movimientos-insumos" },
     { icon: "pi-users", label: "Proveedores", path: "/proveedores" },
     { icon: "pi-chart-line", label: "Reportes", path: "/reportes" },
   ];
