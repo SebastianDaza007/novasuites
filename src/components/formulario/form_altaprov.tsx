@@ -2,8 +2,19 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "primereact/button";
 
+type Proveedor = {
+  nombre?: string;
+  cuit?: string;
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+  contacto_responsable?: string;
+  condiciones_pago?: string;
+  observaciones?: string;
+};
+
 interface ProveedorFormProps {
-  proveedor?: any;
+  proveedor?: Proveedor;
   onClose?: () => void;
 }
 

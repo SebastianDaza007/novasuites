@@ -21,34 +21,52 @@ export default function Sidebar({ title, items }: SidebarProps) {
   const router = useRouter();
 
   const proveedorOptions = [
-    { name: 'Registrar/Editar Proveedor', code: 'EDIT', path: '/proveedores' },
-    { name: 'Cargar Facturas', code: 'INVOICE', path: '/facturas' }
+    { name: "Registrar/Editar Proveedor", code: "EDIT", path: "/proveedores" },
+    { name: "Cargar Facturas", code: "INVOICE", path: "/facturas" },
   ];
 
   return (
     <aside
       className={classNames(
-        "bg-gray-900 text-white h-screen transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        "h-screen shadow-sm transition-all duration-300 flex flex-col",
+        collapsed ? "w-16" : "w-64",
+        "bg-[var(--background)] text-[var(--foreground)] border-r"
       )}
+      style={{
+        borderRight: "1px solid var(--border)",
+      }}
     >
       {/* Encabezado */}
-      <div className="flex items-center justify-between p-4">
-        {!collapsed && <span className="font-bold text-lg">{title}</span>}
+      <div
+        className="flex items-center justify-between px-4 py-4 md:py-6 border-b"
+        style={{ borderColor: "var(--border)" }}
+      >
+        {!collapsed && (
+          <span className="font-bold text-lg md:text-2xl tracking-tight">
+            {title}
+          </span>
+        )}
         <button
-          className="ml-auto"
+          className="ml-auto p-1 rounded-md transition-colors hover:bg-[var(--border)]/40"
           onClick={() => setCollapsed(!collapsed)}
         >
-          <i className={classNames("pi", collapsed ? "pi-angle-right" : "pi-angle-left")}></i>
+          <i
+            className={classNames(
+              "pi",
+              collapsed ? "pi-angle-right" : "pi-angle-left"
+            )}
+            style={{ color: "var(--foreground)" }}
+          ></i>
         </button>
       </div>
 
       {/* Lista de opciones */}
-      <nav className="mt-4">
+      <nav className="mt-6 flex-1 flex flex-col gap-1">
         {items.map((item, index) => (
           <div key={index}>
             <div
-              className="flex items-center gap-3 p-3 hover:bg-gray-700 cursor-pointer transition-all"
+              className="flex items-center gap-4 px-6 py-3 cursor-pointer text-base md:text-lg font-medium rounded-lg transition-colors hover:bg-[var(--border)]/20"
+              style={{ color: "var(--foreground)" }}
               onClick={() => {
                 if (item.label === "Proveedores") {
                   setShowProveedorDropdown(!showProveedorDropdown);
@@ -57,28 +75,39 @@ export default function Sidebar({ title, items }: SidebarProps) {
                 }
               }}
             >
-              <i className={classNames("pi", item.icon)}></i>
-              {!collapsed && <span>{item.label}</span>}
+              <i
+                className={classNames("pi text-xl md:text-2xl", item.icon)}
+                style={{ color: "var(--foreground)" }}
+              ></i>
+              {!collapsed && <span className="truncate">{item.label}</span>}
               {!collapsed && item.label === "Proveedores" && (
-                <i className={classNames("pi ml-auto", showProveedorDropdown ? "pi-chevron-up" : "pi-chevron-down")}></i>
+                <i
+                  className={classNames(
+                    "pi ml-auto",
+                    showProveedorDropdown ? "pi-chevron-up" : "pi-chevron-down"
+                  )}
+                ></i>
               )}
             </div>
-            
-            {/* Submenu para Proveedores */}
-            {!collapsed && item.label === "Proveedores" && showProveedorDropdown && (
-              <div className="ml-6">
-                {proveedorOptions.map((option, optionIndex) => (
-                  <div
-                    key={optionIndex}
-                    className="flex items-center gap-3 p-2 pl-4 hover:bg-gray-700 cursor-pointer transition-all text-sm text-gray-300"
-                    onClick={() => router.push(option.path)}
-                  >
-                    <i className="pi pi-circle text-xs"></i>
-                    <span>{option.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+
+            {/* Submenu Proveedores */}
+            {!collapsed &&
+              item.label === "Proveedores" &&
+              showProveedorDropdown && (
+                <div className="ml-10 flex flex-col gap-1">
+                  {proveedorOptions.map((option, optionIndex) => (
+                    <div
+                      key={optionIndex}
+                      className="flex items-center gap-3 px-4 py-2 cursor-pointer text-sm rounded-md transition-colors hover:bg-[var(--border)]/30"
+                      style={{ color: "var(--foreground)" }}
+                      onClick={() => router.push(option.path)}
+                    >
+                      <i className="pi pi-circle text-xs"></i>
+                      <span>{option.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
         ))}
       </nav>
