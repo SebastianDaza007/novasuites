@@ -166,7 +166,7 @@ export default function MovimientoForm() {
   }
 
   return (
-    <section className="h-[calc(100vh-8rem)] overflow-y-auto p-6 bg-white rounded-xl shadow-lg space-y-6">
+    <section className="h-full p-6 bg-white rounded-xl shadow-lg space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">📦 Registrar Movimiento</h2>
 
       {/* Datos principales */}
