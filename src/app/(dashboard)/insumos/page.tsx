@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import Header from "@/components/headers/header";
+import Header from "@/components/common/header";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 
-import CategoryDropdown from "@/components/lista desplegable/lista_desplegable";
-import Button from "@/components/botones/button";
-import TextInput from "@/components/inputs/textinput";
-import NumericInput from "@/components/inputs/inputnumber";
-import TextAreaInput from "@/components/inputs/textarea";
-import DateInput from "@/components/inputs/inputfecha";
-import ToggleInput from "@/components/inputs/toggleinput";
+import CategoryDropdown from "@/components/pages/insumos/lista_desplegable";
+import Button from "@/components/common/button";
+import TextInput from "@/components/common/inputs/textinput";
+import NumericInput from "@/components/common/inputs/inputnumber";
+import TextAreaInput from "@/components/common/inputs/textarea";
+import DateInput from "@/components/common/inputs/inputfecha";
+import ToggleInput from "@/components/common/inputs/toggleinput";
 
 // Datos mock
 const productosMock = [
