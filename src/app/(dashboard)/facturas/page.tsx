@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import CardGridProv from '@/components/cardgrid/cargrid_prov';
+import CardGridProv from '@/components/pages/Facturas/cargrid_prov';
 
 export default function FacturasPage() {
   return (

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import TablaProveedores from '@/components/tablas/tablaprov';
-import ProveedorForm from '@/components/formulario/form_altaprov';
+import TablaProveedores from '@/components/pages/prov/tablaprov';
+import ProveedorForm from '@/components/pages/prov/form_altaprov';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 

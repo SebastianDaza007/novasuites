@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import FormLogin from '../../../components/formulario/form_login';
+import FormLogin from '../../../components/pages/login/form_login';
 
 
 export default function LoginPage() {

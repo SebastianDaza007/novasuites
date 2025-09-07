@@ -1,4 +1,4 @@
-import MovimientoForm from '@/components/inventario/MovimientoForm'
+import MovimientoForm from '@/components/pages/registrar_movimiento/MovimientoForm'
 
 export default function PaginaMovimientoInventario() {
   return (

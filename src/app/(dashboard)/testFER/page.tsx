@@ -1,6 +1,6 @@
 "use client";
 
-import TablaProveedores from '@/components/formulario/form_altaprov';
+import TablaProveedores from '@/components/pages/prov/form_altaprov';
 
 export default function Home() {
     return (
