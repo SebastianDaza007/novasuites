@@ -30,7 +30,7 @@ model insumo {
   alertas             alerta_stock[]
   detalle_movimientos detalle_movimiento_inventario[]
   detalle_ordenes     detalle_orden_compra[]
-  categoria           categoria?                       @relation(fields: [id_categoria], references: [id_categoria])
+  categoria           categoria                       @relation(fields: [id_categoria], references: [id_categoria])
   proveedor           proveedor?                      @relation(fields: [id_proveedor], references: [id_proveedor])
   stock_depositos     stock_deposito[]
 }
