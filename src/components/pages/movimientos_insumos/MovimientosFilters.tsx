@@ -1,17 +1,19 @@
 import React from 'react';
 import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
 import { Dropdown } from 'primereact/dropdown';
 import { Card } from 'primereact/card';
 import { useRouter } from 'next/navigation';
-import { Categoria, TipoMovimiento, Deposito, MovimientosFiltros } from '@/types/movimientos';
+import { Categoria, TipoMovimiento, Deposito, MovimientosFiltros, NumeroMovimiento, InsumoOption, LoteOption } from '@/types/movimientos';
 
 interface MovimientosFiltersProps {
   filtros: MovimientosFiltros;
   categorias: Categoria[];
   tiposMovimiento: TipoMovimiento[];
   depositos: Deposito[];
+  numerosMovimiento: NumeroMovimiento[];
+  insumosOptions: InsumoOption[];
+  lotesOptions: LoteOption[];
   onFiltroChange: <K extends keyof MovimientosFiltros>(
     campo: K,
     valor: MovimientosFiltros[K]
@@ -26,6 +28,9 @@ const MovimientosFilters: React.FC<MovimientosFiltersProps> = ({
   categorias,
   tiposMovimiento,
   depositos,
+  numerosMovimiento,
+  insumosOptions,
+  lotesOptions,
   onFiltroChange,
   onLimpiarFiltros,
   onActualizar,
@@ -150,51 +155,60 @@ const MovimientosFilters: React.FC<MovimientosFiltersProps> = ({
             <label htmlFor="busquedaNumero" className="text-sm font-medium mb-2 text-gray-700">
               Nro Mov
             </label>
-            <span className="p-input-icon-left w-full">
-              <i className="pi pi-hashtag" style={{ left: '1rem' }} />
-              <InputText
-                id="busquedaNumero"
-                value={filtros.numeroMovimiento || ''}
-                onChange={(e) => onFiltroChange('numeroMovimiento', e.target.value)}
-                placeholder="Buscar por número de movimiento..."
-                className="w-full"
-                style={{ paddingLeft: '3rem', paddingRight: '1rem' }}
-              />
-            </span>
+            <Dropdown
+              id="busquedaNumero"
+              value={filtros.numeroMovimiento}
+              options={numerosMovimiento}
+              onChange={(e) => onFiltroChange('numeroMovimiento', e.value)}
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccionar número de movimiento"
+              className="w-full"
+              showClear
+              filter
+              filterPlaceholder="Buscar movimiento..."
+              emptyMessage="No se encontraron movimientos"
+            />
           </div>
 
           <div className="flex flex-col">
             <label htmlFor="busquedaInsumo" className="text-sm font-medium mb-2 text-gray-700">
               Insumo
             </label>
-            <span className="p-input-icon-left w-full">
-              <i className="pi pi-box" style={{ left: '1rem' }} />
-              <InputText
-                id="busquedaInsumo"
-                value={filtros.insumoFilter || ''}
-                onChange={(e) => onFiltroChange('insumoFilter', e.target.value)}
-                placeholder="Buscar por nombre de insumo..."
-                className="w-full"
-                style={{ paddingLeft: '3rem', paddingRight: '1rem' }}
-              />
-            </span>
+            <Dropdown
+              id="busquedaInsumo"
+              value={filtros.insumoFilter}
+              options={insumosOptions}
+              onChange={(e) => onFiltroChange('insumoFilter', e.value)}
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccionar insumo"
+              className="w-full"
+              showClear
+              filter
+              filterPlaceholder="Buscar insumo..."
+              emptyMessage="No se encontraron insumos"
+            />
           </div>
 
           <div className="flex flex-col">
             <label htmlFor="busquedaLote" className="text-sm font-medium mb-2 text-gray-700">
               Lote
             </label>
-            <span className="p-input-icon-left w-full">
-              <i className="pi pi-tag" style={{ left: '1rem' }} />
-              <InputText
-                id="busquedaLote"
-                value={filtros.loteFilter || ''}
-                onChange={(e) => onFiltroChange('loteFilter', e.target.value)}
-                placeholder="Buscar por lote..."
-                className="w-full"
-                style={{ paddingLeft: '3rem', paddingRight: '1rem' }}
-              />
-            </span>
+            <Dropdown
+              id="busquedaLote"
+              value={filtros.loteFilter}
+              options={lotesOptions}
+              onChange={(e) => onFiltroChange('loteFilter', e.value)}
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccionar lote"
+              className="w-full"
+              showClear
+              filter
+              filterPlaceholder="Buscar lote..."
+              emptyMessage="No se encontraron lotes"
+            />
           </div>
 
           <div className="flex flex-row justify-end items-end gap-2">

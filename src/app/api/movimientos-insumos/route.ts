@@ -24,25 +24,28 @@ export async function GET(request: NextRequest) {
     const categoria = searchParams.get('categoria');
     const deposito = searchParams.get('deposito');
     const search = searchParams.get('search');
+    const numeroMovimiento = searchParams.get('numeroMovimiento');
+    const insumo = searchParams.get('insumo');
+    const lote = searchParams.get('lote');
     const sortField = searchParams.get('sortField') || 'fecha_movimiento';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Construir filtros WHERE
     const whereConditions: Prisma.detalle_movimiento_inventarioWhereInput = {};
-    
+
     // Filtros de movimiento
     const movimientoFilters: Prisma.movimiento_inventarioWhereInput = {};
-    
+
     if (fechaDesde || fechaHasta) {
       const fechaMovimiento: Prisma.DateTimeFilter = {};
-      
+
       if (fechaDesde) {
         fechaMovimiento.gte = new Date(fechaDesde);
       }
       if (fechaHasta) {
         fechaMovimiento.lte = new Date(fechaHasta + 'T23:59:59.999Z');
       }
-      
+
       movimientoFilters.fecha_movimiento = fechaMovimiento;
     }
 
@@ -56,15 +59,38 @@ export async function GET(request: NextRequest) {
       movimientoFilters.id_deposito = parseInt(deposito);
     }
 
+    // Filtro específico por número de movimiento
+    if (numeroMovimiento) {
+      movimientoFilters.id_movimiento = parseInt(numeroMovimiento);
+    }
+
     // Aplicar filtros de movimiento si existen
     if (Object.keys(movimientoFilters).length > 0) {
       whereConditions.movimiento = movimientoFilters;
     }
 
     // Filtros de insumo
+    const insumoFilters: Prisma.insumoWhereInput = {};
+
     if (categoria) {
-      whereConditions.insumo = {
-        id_categoria: parseInt(categoria)
+      insumoFilters.id_categoria = parseInt(categoria);
+    }
+
+    // Filtro específico por insumo
+    if (insumo) {
+      insumoFilters.id_insumo = parseInt(insumo);
+    }
+
+    // Aplicar filtros de insumo si existen
+    if (Object.keys(insumoFilters).length > 0) {
+      whereConditions.insumo = insumoFilters;
+    }
+
+    // Filtro específico por lote
+    if (lote) {
+      whereConditions.lote = {
+        equals: lote,
+        mode: 'insensitive'
       };
     }
 
@@ -106,12 +132,16 @@ export async function GET(request: NextRequest) {
 
     // Configurar ordenamiento
     const orderBy: Prisma.detalle_movimiento_inventarioOrderByWithRelationInput = {};
-    if (sortField === 'fecha_movimiento') {
+    if (sortField === 'movimiento.fecha_movimiento') {
       orderBy.movimiento = { fecha_movimiento: sortOrder as Prisma.SortOrder };
-    } else if (sortField === 'nombre_insumo') {
+    } else if (sortField === 'movimiento.id_movimiento') {
+      orderBy.movimiento = { id_movimiento: sortOrder as Prisma.SortOrder };
+    } else if (sortField === 'insumo.nombre_insumo') {
       orderBy.insumo = { nombre_insumo: sortOrder as Prisma.SortOrder };
     } else if (sortField === 'cantidad') {
       orderBy.cantidad = sortOrder as Prisma.SortOrder;
+    } else if (sortField === 'fecha_vencimiento') {
+      orderBy.fecha_vencimiento = sortOrder as Prisma.SortOrder;
     } else {
       orderBy.movimiento = { fecha_movimiento: 'desc' };
     }

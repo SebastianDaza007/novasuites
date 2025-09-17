@@ -15,17 +15,21 @@ const MovimientosInsumos = () => {
         categorias,
         tiposMovimiento,
         depositos,
+        numerosMovimiento,
+        insumosOptions,
+        lotesOptions,
         loading,
         totalRecords,
-        
+
         // Estado de filtros y paginación
         filtros,
         lazyState,
-        
+
         // Funciones de control
         setFiltro,
         limpiarFiltros,
         onPage,
+        onSort,
         fetchMovimientos
     } = useMovimientos();
 
@@ -49,6 +53,9 @@ const MovimientosInsumos = () => {
                     categorias={categorias}
                     tiposMovimiento={tiposMovimiento}
                     depositos={depositos}
+                    numerosMovimiento={numerosMovimiento}
+                    insumosOptions={insumosOptions}
+                    lotesOptions={lotesOptions}
                     onFiltroChange={setFiltro}
                     onLimpiarFiltros={limpiarFiltros}
                     onActualizar={fetchMovimientos}
@@ -61,6 +68,7 @@ const MovimientosInsumos = () => {
                     totalRecords={totalRecords}
                     lazyState={lazyState}
                     onPage={onPage}
+                    onSort={onSort}
                 />
             </div>
         </div>

@@ -70,8 +70,8 @@ export interface MovimientosFiltros {
   tipoMovimientoFiltro: string | null;
   depositoFiltro: number | null;
   globalFilter: string;
-  numeroMovimiento?: string;
-  insumoFilter?: string;
+  numeroMovimiento?: number;
+  insumoFilter?: number;
   loteFilter?: string;
 }
 
@@ -82,4 +82,30 @@ export interface LazyState {
   sortField: string | null;
   sortOrder: number | null;
   filters: Record<string, unknown>;
+}
+
+export interface NumeroMovimiento {
+  value: number;
+  label: string;
+  id_movimiento: number;
+  numero_comprobante: string | null;
+  fecha_movimiento: string;
+  razon: string | null;
+}
+
+export interface InsumoOption {
+  value: number;
+  label: string;
+  id_insumo: number;
+  nombre_insumo: string;
+  descripcion_insumo: string | null;
+  categoria: string;
+}
+
+export interface LoteOption {
+  value: string;
+  label: string;
+  lote: string;
+  fecha_vencimiento: string | null;
+  insumo_ejemplo: string;
 }

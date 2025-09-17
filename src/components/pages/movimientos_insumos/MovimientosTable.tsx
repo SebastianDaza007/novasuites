@@ -1,5 +1,5 @@
 import React from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableStateEvent } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { Badge } from 'primereact/badge';
@@ -11,7 +11,7 @@ interface MovimientosTableProps {
   totalRecords: number;
   lazyState: LazyState;
   onPage: (event: { first: number; rows: number }) => void;
-  onSort?: (event: { sortField: string; sortOrder: number }) => void;
+  onSort?: (event: DataTableStateEvent) => void;
 }
 
 const MovimientosTable: React.FC<MovimientosTableProps> = ({
@@ -42,13 +42,6 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
     });
   };
 
-  const formatCurrency = (value: number | null) => {
-    if (value === null || value === undefined) return '-';
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS'
-    }).format(value);
-  };
 
   const tipoMovimientoBodyTemplate = (rowData: MovimientoDetalle) => {
     const razonMovimiento = rowData.movimiento.razon_movimiento;
@@ -179,6 +172,9 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
         rows={lazyState.rows}
         totalRecords={totalRecords}
         onPage={onPage}
+        onSort={onSort}
+        sortField={lazyState.sortField || undefined}
+        sortOrder={lazyState.sortOrder as 1 | -1 | null || null}
         loading={loading}
         stripedRows
         showGridlines
@@ -188,14 +184,14 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
         className="p-datatable-sm"
         emptyMessage="No se encontraron movimientos de insumos"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-        rowsPerPageOptions={[10, 20, 50, 100]}
+        rowsPerPageOptions={[5, 10, 15, 30]}
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} movimientos"
-        responsiveLayout="scroll"
       >
         <Column
-          field="id_detalle"
+          field="movimiento.id_movimiento"
           header="#Nro Mov"
           sortable
+          body={(rowData) => rowData.movimiento.id_movimiento}
           style={{ minWidth: '80px', textAlign: 'center' }}
           bodyStyle={{ textAlign: 'center' }}
           headerStyle={{ textAlign: 'center' }}
@@ -203,8 +199,7 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
 
         <Column
           field="insumo.nombre_insumo"
-          header="Insumo"
-          sortable
+          header="Insumo/Categoría/Desc"
           body={insumoBodyTemplate}
           style={{ minWidth: '250px' }}
         />
@@ -235,26 +230,13 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
           headerStyle={{ textAlign: 'center' }}
         />
 
-        <Column
-          header="Tipo/Razón"
-          body={tipoMovimientoBodyTemplate}
-          style={{ minWidth: '150px', textAlign: 'center' }}
-          headerStyle={{ textAlign: 'center' }}
-        />
+
 
 
         <Column
-          field="costo_unitario"
-          header="Costo Unit."
-          body={(rowData) => formatCurrency(rowData.costo_unitario)}
-          style={{ minWidth: '120px', textAlign: 'right' }}
-          bodyStyle={{ textAlign: 'right' }}
-          headerStyle={{ textAlign: 'center' }}
-        />
-
-
-        <Column
+          field="fecha_vencimiento"
           header="Lote/Vencimiento"
+          sortable
           body={loteVencimientoBodyTemplate}
           style={{ minWidth: '140px' }}
           headerStyle={{ textAlign: 'center' }}
@@ -269,17 +251,24 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
         />
 
         <Column
-          header="Usuario"
+          field="movimiento.observaciones"
+          header="Observaciones"
+          body={(rowData) => rowData.movimiento.observaciones || '-'}
+          style={{ minWidth: '150px' }}
+          headerStyle={{ textAlign: 'center' }}
+        />
+
+        <Column
+          header="Usuario responsable"
           body={usuarioBodyTemplate}
           style={{ minWidth: '120px' }}
           headerStyle={{ textAlign: 'center' }}
         />
 
         <Column
-          field="movimiento.observaciones"
-          header="Observaciones"
-          body={(rowData) => rowData.movimiento.observaciones || '-'}
-          style={{ minWidth: '150px' }}
+          header="Tipo/Razón"
+          body={tipoMovimientoBodyTemplate}
+          style={{ minWidth: '150px', textAlign: 'center' }}
           headerStyle={{ textAlign: 'center' }}
         />
       </DataTable>
