@@ -80,7 +80,7 @@ export interface LazyState {
   rows: number;
   page: number;
   sortField: string | null;
-  sortOrder: number | null;
+  sortOrder: number | null | undefined;
   filters: Record<string, unknown>;
 }
 

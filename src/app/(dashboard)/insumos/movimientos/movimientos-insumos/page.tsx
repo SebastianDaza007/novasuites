@@ -47,7 +47,7 @@ const MovimientosInsumos = () => {
         <div className="p-6 bg-gray-50 min-h-screen">
             <Toast ref={toast} />
             
-            <div className="max-w-full mx-auto space-y-6">
+            <div className="max-w-full mx-auto max-y-full">
                 <MovimientosFilters
                     filtros={filtros}
                     categorias={categorias}

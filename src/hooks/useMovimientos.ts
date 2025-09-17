@@ -53,7 +53,7 @@ interface UseMovimientosReturn {
   ) => void;
   limpiarFiltros: () => void;
   onPage: (event: { first: number; rows: number }) => void;
-  onSort: (event: { sortField: string; sortOrder: number | null }) => void;
+  onSort: (event: { sortField: string; sortOrder: number | null | undefined }) => void;
   fetchMovimientos: () => Promise<void>;
 }
 
@@ -126,7 +126,7 @@ export const useMovimientos = (): UseMovimientosReturn => {
   }, []);
 
   // Función para manejar ordenamiento
-  const onSort = useCallback((event: { sortField: string; sortOrder: number | null }) => {
+  const onSort = useCallback((event: { sortField: string; sortOrder: number | null | undefined }) => {
     setLazyState(prev => ({
       ...prev,
       sortField: event.sortField || null,

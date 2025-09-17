@@ -43,7 +43,7 @@ const MovimientosFilters: React.FC<MovimientosFiltersProps> = ({
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Button
-            label="Nuevo Movimiento"
+            label="Registrar movimientos"
             icon="pi pi-arrow-circle-left"
             className="p-button-info"
             onClick={() => router.push('/insumos/movimientos/registrar')}
