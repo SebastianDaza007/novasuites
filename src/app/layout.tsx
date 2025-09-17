@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import "primereact/resources/themes/soho-light/theme.css"; // 🎨 Tema de PrimeReact
+import "primereact/resources/primereact.min.css";               // ⚙️ Core de PrimeReact
+import "primeicons/primeicons.css";                             // 🔣 Iconos de PrimeReact
+// import "primeflex/primeflex.css";                               // 📐 Utilidades CSS de PrimeFlex (grid, flex, spacing)
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

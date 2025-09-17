@@ -11,7 +11,6 @@ type TextInputProps = {
     className?: string;                   // Clases CSS para personalizar el estilo
     disabled?: boolean;  
     label?: string; // ✅ nueva prop para el label                 // Indica si el input está deshabilitado
-    icon?: string;                     // Icono opcional para mostrar dentro del input
 };
 
 // Componente reutilizable de InputText
@@ -22,24 +21,19 @@ const TextInput: React.FC<TextInputProps> = ({
     className = "",   // valor por defecto si no se pasan clases
     disabled = false, // valor por defecto si no se indica disabled
     label,
-    icon,
 }) => {
     return (
         <div className="flex flex-col">
             {/* ✅ Mostramos el label si se pasó */}
-            {label && <label className="font-bold mb-2 text-gray-700">{label}</label>}
-
-            {/* 👇 Si hay icono, usamos wrapper especial de PrimeReact */}
-            <span className={icon ? "p-input-icon-left w-full" : "w-full"}>
-                {icon && <i className={`${icon} text-gray-500`}></i>} {/* Mostramos el icono si se pasó */}
-                <InputText
-                    value={value} // Valor actual del input
-                    onChange={(e) => onChange(e.target.value)} // Actualiza el valor llamando a la función onChange pasada desde afuera
-                    placeholder={placeholder} // Texto de ejemplo
-                    className={`w-full pl-9 ${className}`}     // Clases CSS para estilizar con espacio para el icono
-                    disabled={disabled}       // Si está deshabilitado
-                />
-            </span>
+            {label && <label className="font-bold mb-2">{label}</label>}
+        <InputText
+            value={value} // Valor actual del input
+            onChange={(e) => onChange(e.target.value)} // Actualiza el valor llamando a la función onChange pasada desde afuera
+            placeholder={placeholder} // Texto de ejemplo
+            className={className}     // Clases CSS para estilizar
+            disabled={disabled}       // Si está deshabilitado
+            
+        />
         </div>
     );
 };
