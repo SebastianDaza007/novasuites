@@ -12,7 +12,6 @@ type MovimientoDetalle = {
   vencimiento?: string;
   stockMinimo?: number;
   stockCritico?: number;
-  observaciones?: string;
 };
 
 type MovimientosTableProps = {
@@ -28,23 +27,17 @@ export default function MovimientosTable({
   first,
   rows,
 }: MovimientosTableProps) {
-  const actionTemplate = (rowData: MovimientoDetalle) => {
-    return (
-      <Button
-        icon="pi pi-trash"
-        severity="danger"
-        rounded
-        text
-        onClick={() => {
-          console.log("Click eliminar:", rowData);
-          onDelete?.(rowData.id);
-        }}
-        className="hover:scale-110 transition-transform"
-      />
-    );
-  };
+  const actionTemplate = (rowData: MovimientoDetalle) => (
+    <Button
+      icon="pi pi-trash"
+      severity="danger"
+      rounded
+      text
+      onClick={() => onDelete?.(rowData.id)}
+      className="hover:scale-110 transition-transform"
+    />
+  );
 
-  // aplicar paginación externa
   const paginatedData = data.slice(first, first + rows);
 
   return (
@@ -62,10 +55,9 @@ export default function MovimientosTable({
         <Column field="vencimiento" header="Vencimiento" />
         <Column field="stockMinimo" header="Stock Mínimo" />
         <Column field="stockCritico" header="Stock Crítico" />
-        <Column field="observaciones" header="Observaciones" />
         <Column
           header="Acciones"
-          body={(rowData) => actionTemplate(rowData as MovimientoDetalle)}
+          body={actionTemplate}
           style={{ textAlign: "center" }}
         />
       </DataTable>

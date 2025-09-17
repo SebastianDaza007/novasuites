@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import MovimientoForm from "@/components/pages/registrar_movimiento/MovimientoForm";
 import MovimientosTable from "@/components/pages/registrar_movimiento/MovimientosTable";
 import MovimientosFooter from "@/components/pages/registrar_movimiento/MovimientosFooter";
 
 type MovimientoDetalle = {
-  id: number; // temporal
-  id_insumo: number; // real para BD
+  id: number;
+  id_insumo: number;
   insumo: string;
   cantidad: number;
   lote?: string;
   vencimiento?: string;
   stockMinimo?: number;
   stockCritico?: number;
-  observaciones?: string;
 };
 
 export default function Page() {
@@ -22,9 +22,12 @@ export default function Page() {
   const [rows, setRows] = useState(10);
   const [first, setFirst] = useState(0);
 
-  // globales del movimiento
   const [idDeposito, setIdDeposito] = useState<number | null>(null);
   const [idRazon, setIdRazon] = useState<number | null>(null);
+  const [observaciones, setObservaciones] = useState(""); // 👈 global
+
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleAdd = (detalle: MovimientoDetalle) => {
     setDetalles((prev) => [...prev, detalle]);
@@ -40,17 +43,19 @@ export default function Page() {
   };
 
   const handleVerMovimientos = () => {
-    console.log("👉 Redirigir a HU-05 (ver movimientos)");
+    router.push("/insumos/movimientos");
   };
 
   const handleRegistrar = async () => {
     try {
+      setLoading(true);
+
       const payload = {
-        id_usuario: 1, // luego dinámico
-        id_deposito: idDeposito, // 👈 global del form
-        id_razon_movimiento: idRazon, // 👈 global del form
+        id_usuario: 1,
+        id_deposito: idDeposito,
+        id_razon_movimiento: idRazon,
         numero_comprobante: "ABC123",
-        observaciones: "Movimiento de prueba desde el front",
+        observaciones, // 👈 ahora global
         detalles: detalles.map((d) => ({
           id_insumo: d.id_insumo,
           cantidad: d.cantidad,
@@ -74,9 +79,12 @@ export default function Page() {
 
       console.log("✅ Movimiento registrado:", data);
       alert("Movimiento registrado con éxito 🚀");
+
+      location.reload();
     } catch (err) {
       console.error("❌ Error registrando movimiento:", err);
       alert("Error al registrar movimiento ❌");
+      setLoading(false);
     }
   };
 
@@ -88,12 +96,14 @@ export default function Page() {
         setIdDeposito={setIdDeposito}
         idRazon={idRazon}
         setIdRazon={setIdRazon}
+        observaciones={observaciones}          // 👈 nuevo
+        setObservaciones={setObservaciones}    // 👈 nuevo
       />
       <MovimientosTable
         data={detalles}
         first={first}
         rows={rows}
-        onDelete={handleDelete} // 👈 ahora sí
+        onDelete={handleDelete}
       />
       <MovimientosFooter
         totalRecords={detalles.length}
@@ -101,6 +111,7 @@ export default function Page() {
         onPageChange={handlePageChange}
         onVerMovimientos={handleVerMovimientos}
         onRegistrar={handleRegistrar}
+        loading={loading}
       />
     </div>
   );

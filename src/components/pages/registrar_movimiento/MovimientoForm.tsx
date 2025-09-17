@@ -17,7 +17,6 @@ type MovimientoDetalle = {
   vencimiento?: string;
   stockMinimo?: number;
   stockCritico?: number;
-  observaciones?: string;
 };
 
 type MovimientoFormProps = {
@@ -26,6 +25,8 @@ type MovimientoFormProps = {
   setIdDeposito: (id: number | null) => void;
   idRazon: number | null;
   setIdRazon: (id: number | null) => void;
+  observaciones: string;
+  setObservaciones: (v: string) => void;
 };
 
 export default function MovimientoForm({
@@ -34,6 +35,8 @@ export default function MovimientoForm({
   setIdDeposito,
   idRazon,
   setIdRazon,
+  observaciones,
+  setObservaciones,
 }: MovimientoFormProps) {
   const [idInsumo, setIdInsumo] = useState<number | null>(null);
 
@@ -46,7 +49,6 @@ export default function MovimientoForm({
   const [vencimiento, setVencimiento] = useState<Date | null>(null);
   const [stockMinimo, setStockMinimo] = useState<number | null>(null);
   const [stockCritico, setStockCritico] = useState<number | null>(null);
-  const [observaciones, setObservaciones] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,7 +110,6 @@ export default function MovimientoForm({
       vencimiento: vencimiento ? vencimiento.toISOString().split("T")[0] : undefined,
       stockMinimo: stockMinimo || undefined,
       stockCritico: stockCritico || undefined,
-      observaciones: observaciones || undefined,
     };
 
     onAdd(nuevoDetalle);
@@ -122,34 +123,42 @@ export default function MovimientoForm({
     setVencimiento(null);
     setStockMinimo(null);
     setStockCritico(null);
-    setObservaciones("");
   };
 
   return (
-    <div className="p-4 border rounded-lg shadow-sm space-y-4">
-      {/* Globales: Depósito + Razón */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Dropdown
-          id="deposito"
-          value={idDeposito}
-          options={depositos}
-          onChange={(e) => setIdDeposito(e.value)}
-          className="w-full"
-          placeholder="Depósito"
-        />
-        <Dropdown
-          id="razon"
-          value={idRazon}
-          options={razones}
-          onChange={(e) => setIdRazon(e.value)}
-          className="w-full"
-          placeholder="Razón de movimiento"
+    <div className="p-4 border rounded-lg shadow-sm space-y-6">
+      {/* Globales: Depósito + Razón + Observaciones */}
+      <div className="space-y-4 pb-6 border-b">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Dropdown
+            id="deposito"
+            value={idDeposito}
+            options={depositos}
+            onChange={(e) => setIdDeposito(e.value)}
+            className="w-full"
+            placeholder="Depósito"
+          />
+          <Dropdown
+            id="razon"
+            value={idRazon}
+            options={razones}
+            onChange={(e) => setIdRazon(e.value)}
+            className="w-full"
+            placeholder="Razón de movimiento"
+          />
+        </div>
+        <InputTextarea
+          id="observaciones"
+          value={observaciones}
+          onChange={(e) => setObservaciones(e.target.value)}
+          rows={4}
+          className="w-full min-h-[120px]"
+          placeholder="Observaciones"
         />
       </div>
 
       {/* Detalle de insumo + botones */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Inputs (3/4 columnas) */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
         <div className="md:col-span-3 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Dropdown
@@ -202,18 +211,9 @@ export default function MovimientoForm({
               placeholder="Vencimiento (opcional)"
             />
           </div>
-
-          <InputTextarea
-            id="observaciones"
-            value={observaciones}
-            onChange={(e) => setObservaciones(e.target.value)}
-            rows={3}
-            className="w-full"
-            placeholder="Observaciones"
-          />
         </div>
 
-        {/* Botones (1/4 columna) */}
+        {/* Botones */}
         <div className="flex flex-col justify-center items-stretch gap-4">
           <Button
             label="Agregar"

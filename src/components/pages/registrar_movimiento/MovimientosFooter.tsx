@@ -10,6 +10,7 @@ type MovimientosFooterProps = {
   onPageChange: (e: PaginatorPageChangeEvent) => void;
   onVerMovimientos: () => void;
   onRegistrar: () => void;
+  loading: boolean; // 👈 nuevo prop
 };
 
 export default function MovimientosFooter({
@@ -18,6 +19,7 @@ export default function MovimientosFooter({
   onPageChange,
   onVerMovimientos,
   onRegistrar,
+  loading,
 }: MovimientosFooterProps) {
   const [first, setFirst] = useState(0);
 
@@ -47,10 +49,11 @@ export default function MovimientosFooter({
 
       {/* Botón derecha */}
       <Button
-        label="Registrar"
-        icon="pi pi-check"
+        label={loading ? "Registrando..." : "Registrar"}
+        icon={loading ? "pi pi-spin pi-spinner" : "pi pi-check"}
         severity="success"
         onClick={onRegistrar}
+        disabled={loading} // 👈 bloqueo
       />
     </div>
   );
