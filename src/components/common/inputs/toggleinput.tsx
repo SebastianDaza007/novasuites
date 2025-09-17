@@ -3,36 +3,38 @@
 import React from "react";
 import { SelectButton } from "primereact/selectbutton";
 
-type OptionType = string | { label: string; value: any };
+type OptionValue = string | number | boolean;
 
-type ToggleInputProps = {
-    value: any;                           // Valor seleccionado
-    onChange: (value: any) => void;       // Callback cuando cambia
-    options: OptionType[];                // Opciones disponibles
-    label?: string;                       // Label opcional
-    className?: string;                   // Clases CSS adicionales
-    disabled?: boolean;                   // Si está deshabilitado
+type OptionType = string | { label: string; value: OptionValue };
+
+type ToggleInputProps<T extends OptionValue = boolean> = {
+    value: T;
+    onChange: React.Dispatch<React.SetStateAction<T>>;
+    options: OptionType[];
+    label?: string;
+    className?: string;
+    disabled?: boolean;
 };
 
-const ToggleInput: React.FC<ToggleInputProps> = ({
+const ToggleInput = <T extends OptionValue = boolean>({
     value,
     onChange,
     options,
     label,
     className = "",
     disabled = false,
-}) => {
+}: ToggleInputProps<T>) => {
     return (
         <div className="flex flex-col w-full">
-            {label && <label className="font-bold mb-2">{label}</label>}
+        {label && <label className="font-bold mb-2">{label}</label>}
 
-            <SelectButton
-                value={value} // ✅ Aquí va value, no checked
-                onChange={(e) => onChange(e.value)}
-                options={options}
-                className={`w-full ${className}`}
-                disabled={disabled}
-            />
+        <SelectButton
+            value={value}
+            onChange={(e) => onChange(e.value)}
+            options={options}
+            className={`w-full ${className}`} // 👈 añadimos la clase
+            disabled={disabled}
+        />
         </div>
     );
 };
