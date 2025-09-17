@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { Dropdown } from "primereact/dropdown";
 
-type Category = {
+type Deposito = {
     id: number;
     name: string;
 };
 
-type CategoryDropdownProps = {
+type DepositoDropdownProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     placeholder?: string;
@@ -17,29 +17,29 @@ type CategoryDropdownProps = {
     label?: string;
 };
 
-const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
+const DepositoDropdown: React.FC<DepositoDropdownProps> = ({
     value,
     onChange,
-    placeholder = "Seleccionar",
+    placeholder = "Seleccionar depósito",
     className = "",
     disabled = false,
     label,
 }) => {
-    const [categories, setCategories] = useState<Category[]>([]);
+    const [depositos, setDepositos] = useState<Deposito[]>([]);
 
     // 🚀 Llamada a la API
     useEffect(() => {
-        const fetchCategorias = async () => {
+        const fetchDepositos = async () => {
         try {
-            const res = await fetch("/api/insumos/categorias");
-            if (!res.ok) throw new Error("Error al cargar categorías");
-            const data: Category[] = await res.json();
-            setCategories(data);
+            const res = await fetch("/api/insumos/depositos");
+            if (!res.ok) throw new Error("Error al cargar depósitos");
+            const data: Deposito[] = await res.json();
+            setDepositos(data);
         } catch (error) {
-            console.error("❌ Error cargando categorías:", error);
+            console.error("❌ Error cargando depósitos:", error);
         }
         };
-        fetchCategorias();
+        fetchDepositos();
     }, []);
 
     return (
@@ -48,7 +48,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
         <Dropdown
             value={value}
             onChange={(e) => onChange(e.value)}
-            options={categories}
+            options={depositos}
             optionLabel="name"
             optionValue="id"
             showClear
@@ -60,4 +60,4 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
     );
 };
 
-export default CategoryDropdown;
+export default DepositoDropdown;
