@@ -40,10 +40,20 @@ export async function GET(request: NextRequest) {
       const fechaMovimiento: Prisma.DateTimeFilter = {};
 
       if (fechaDesde) {
-        fechaMovimiento.gte = new Date(fechaDesde);
+        // Crear fecha compensando la zona horaria
+        const fechaInicio = new Date(fechaDesde + 'T00:00:00.000');
+        // Ajustar por offset de zona horaria
+        const offsetMinutes = fechaInicio.getTimezoneOffset();
+        fechaInicio.setMinutes(fechaInicio.getMinutes() - offsetMinutes);
+        fechaMovimiento.gte = fechaInicio;
       }
       if (fechaHasta) {
-        fechaMovimiento.lte = new Date(fechaHasta + 'T23:59:59.999Z');
+        // Crear fecha compensando la zona horaria
+        const fechaFin = new Date(fechaHasta + 'T23:59:59.999');
+        // Ajustar por offset de zona horaria
+        const offsetMinutes = fechaFin.getTimezoneOffset();
+        fechaFin.setMinutes(fechaFin.getMinutes() - offsetMinutes);
+        fechaMovimiento.lte = fechaFin;
       }
 
       movimientoFilters.fecha_movimiento = fechaMovimiento;
