@@ -1,14 +1,21 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export async function GET() {
   try {
     const depositos = await prisma.deposito.findMany({
-      orderBy: { nom_deposito: 'asc' }
-    })
-    return NextResponse.json(depositos)
-  } catch (error: any) {
-    console.error('Error al cargar depósitos:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+      where: { activo: true },
+      select: {
+        id_deposito: true,
+        nombre_deposito: true,
+      },
+    });
+
+    return NextResponse.json(depositos);
+  } catch (error) {
+    console.error("❌ Error al obtener depósitos:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
