@@ -1,292 +1,236 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { InputTextarea } from 'primereact/inputtextarea'
-import { Dropdown } from 'primereact/dropdown'
-import { Button } from 'primereact/button'
-import { Calendar } from 'primereact/calendar'
-import DetalleMovimientoTable from './DetalleMovimientoTable'
+import { useState, useEffect } from "react";
+import { InputNumber } from "primereact/inputnumber";
+import { Dropdown } from "primereact/dropdown";
+import { Calendar } from "primereact/calendar";
+import { InputTextarea } from "primereact/inputtextarea";
+import { InputText } from "primereact/inputtext";
+import { Button } from "primereact/button";
 
-type MovimientoFormData = {
-  tipoMovimiento: number | null
-  depositoOrigen: number | null
-  depositoDestino: number | null
-  id_orden_compra: number | null
-  id_razon_movimiento: number | null
-  observaciones: string
-  fecha: Date | null
-  detalles: DetalleInsumo[]
-}
+type MovimientoDetalle = {
+  id: number;
+  id_insumo: number;
+  insumo: string;
+  cantidad: number;
+  lote?: string;
+  vencimiento?: string;
+  stockMinimo?: number;
+  stockCritico?: number;
+};
 
-type DetalleInsumo = {
-  id_insumo: number | null
-  cantidad: number
-  costo_unitario?: number
-  lote?: string
-  fecha_vencimiento?: Date
-}
+type MovimientoFormProps = {
+  onAdd: (detalle: MovimientoDetalle) => void;
+  idDeposito: number | null;
+  setIdDeposito: (id: number | null) => void;
+  idRazon: number | null;
+  setIdRazon: (id: number | null) => void;
+  observaciones: string;
+  setObservaciones: (v: string) => void;
+};
 
-export default function MovimientoForm() {
-  const [formData, setFormData] = useState<MovimientoFormData>({
-    tipoMovimiento: null,
-    depositoOrigen: null,
-    depositoDestino: null,
-    id_orden_compra: null,
-    id_razon_movimiento: null,
-    observaciones: '',
-    fecha: new Date(),
-    detalles: []
-  })
+export default function MovimientoForm({
+  onAdd,
+  idDeposito,
+  setIdDeposito,
+  idRazon,
+  setIdRazon,
+  observaciones,
+  setObservaciones,
+}: MovimientoFormProps) {
+  const [idInsumo, setIdInsumo] = useState<number | null>(null);
 
-  const [tiposMovimiento, setTiposMovimiento] = useState<{ label: string; value: number }[]>([])
-  const [depositos, setDepositos] = useState<{ label: string; value: number }[]>([])
-  const [ordenesCompra, setOrdenesCompra] = useState<{ label: string; value: number }[]>([])
-  const [razonesMovimiento, setRazonesMovimiento] = useState<{ label: string; value: number }[]>([])
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [insumos, setInsumos] = useState<{ label: string; value: number }[]>([]);
+  const [depositos, setDepositos] = useState<{ label: string; value: number }[]>([]);
+  const [razones, setRazones] = useState<{ label: string; value: number; tipo: string }[]>([]);
+
+  const [cantidad, setCantidad] = useState<number | null>(null);
+  const [lote, setLote] = useState("");
+  const [vencimiento, setVencimiento] = useState<Date | null>(null);
+  const [stockMinimo, setStockMinimo] = useState<number | null>(null);
+  const [stockCritico, setStockCritico] = useState<number | null>(null);
 
   useEffect(() => {
-    const cargarTipos = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch('/api/registrar_movimiento/tipo-movimientos')
-        const data = await res.json()
-        setTiposMovimiento(
-          data.map((tipo: any) => ({
-            label: tipo.nombre_tipo,
-            value: tipo.id_tipo_movimiento
-          }))
-        )
-      } catch (err) {
-        console.error('Error al cargar tipos:', err)
+        const resInsumos = await fetch("/api/registrar_movimiento/insumos");
+        const dataInsumos = await resInsumos.json();
+        setInsumos(dataInsumos.map((i: any) => ({ label: i.nombre_insumo, value: i.id_insumo })));
+
+        const resDepositos = await fetch("/api/registrar_movimiento/depositos");
+        const dataDepositos = await resDepositos.json();
+        setDepositos(dataDepositos.map((d: any) => ({ label: d.nombre_deposito, value: d.id_deposito })));
+
+        const resRazones = await fetch("/api/registrar_movimiento/razones");
+        const dataRazones = await resRazones.json();
+        setRazones(dataRazones.map((r: any) => ({ label: r.nombre_razon, value: r.id_razon, tipo: r.tipo_movimiento })));
+      } catch (error) {
+        console.error("❌ Error cargando datos del form:", error);
       }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (idInsumo && idDeposito) {
+      const fetchStock = async () => {
+        try {
+          const res = await fetch(`/api/registrar_movimiento/stock/${idInsumo}/${idDeposito}`);
+          const data = await res.json();
+          if (data) {
+            setStockMinimo(data.stock_minimo ?? null);
+            setStockCritico(data.stock_critico ?? null);
+          }
+        } catch (error) {
+          console.error("❌ Error obteniendo stock:", error);
+        }
+      };
+      fetchStock();
+    }
+  }, [idInsumo, idDeposito]);
+
+  const handleAdd = () => {
+    if (!idDeposito || !idRazon) {
+      alert("Debe seleccionar depósito y razón antes de agregar un insumo.");
+      return;
+    }
+    if (!idInsumo || !cantidad) {
+      alert("Debe seleccionar un insumo y cantidad.");
+      return;
     }
 
-    const cargarDepositos = async () => {
-      try {
-        const res = await fetch('/api/registrar_movimiento/depositos')
-        const data = await res.json()
-        setDepositos(
-          data.map((dep: any) => ({
-            label: dep.nom_deposito,
-            value: dep.id_deposito
-          }))
-        )
-      } catch (err) {
-        console.error('Error al cargar depósitos:', err)
-      }
-    }
+    const insumoLabel = insumos.find((i) => i.value === idInsumo)?.label || "";
 
-    const cargarOrdenes = async () => {
-      try {
-        const res = await fetch('/api/registrar_movimiento/ordenes-compra')
-        const data = await res.json()
-        setOrdenesCompra(
-          data.map((oc: any) => ({
-            label: oc.numero_orden,
-            value: oc.id_orden_compra
-          }))
-        )
-      } catch (err) {
-        console.error('Error al cargar órdenes:', err)
-      }
-    }
+    const nuevoDetalle: MovimientoDetalle = {
+      id: Date.now(),
+      id_insumo: idInsumo,
+      insumo: insumoLabel,
+      cantidad,
+      lote: lote || undefined,
+      vencimiento: vencimiento ? vencimiento.toISOString().split("T")[0] : undefined,
+      stockMinimo: stockMinimo || undefined,
+      stockCritico: stockCritico || undefined,
+    };
 
-    const cargarRazones = async () => {
-      try {
-        const res = await fetch('/api/registrar_movimiento/razones')
-        const data = await res.json()
-        setRazonesMovimiento(
-          data.map((raz: any) => ({
-            label: raz.nombre_razon,
-            value: raz.id_razon
-          }))
-        )
-      } catch (err) {
-        console.error('Error al cargar razones:', err)
-      }
-    }
+    onAdd(nuevoDetalle);
+    handleClear();
+  };
 
-    cargarTipos()
-    cargarDepositos()
-    cargarOrdenes()
-    cargarRazones()
-  }, [])
-
-  const handleChange = (field: keyof MovimientoFormData, value: any) => {
-    setFormData({ ...formData, [field]: value })
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: '' })
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {}
-
-    if (!formData.tipoMovimiento) {
-      newErrors.tipoMovimiento = 'El tipo de movimiento es obligatorio'
-    }
-
-    if (!formData.fecha) {
-      newErrors.fecha = 'La fecha es obligatoria'
-    }
-
-    if (!formData.detalles || formData.detalles.length === 0) {
-      newErrors.detalles = 'Debe agregar al menos un insumo'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return
-    }
-
-    try {
-      const res = await fetch('/api/registrar_movimiento/registrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-
-      const contentType = res.headers.get('content-type')
-
-      if (!res.ok) {
-        const msg = contentType?.includes('application/json')
-          ? (await res.json()).error
-          : await res.text()
-        throw new Error(msg || 'Error desconocido')
-      }
-
-      alert('✅ Movimiento registrado con éxito')
-      window.location.reload()
-    } catch (error: any) {
-      alert(`❌ Error al registrar: ${error.message}`)
-    }
-  }
+  const handleClear = () => {
+    setIdInsumo(null);
+    setCantidad(null);
+    setLote("");
+    setVencimiento(null);
+    setStockMinimo(null);
+    setStockCritico(null);
+  };
 
   return (
-    <section className="h-full p-6 bg-white rounded-xl shadow-lg space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">📦 Registrar Movimiento</h2>
-
-      {/* Datos principales */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700 border-b pb-1">Datos principales</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-700">
-              Tipo de movimiento *
-            </label>
-            <Dropdown
-              value={formData.tipoMovimiento ?? null}
-              options={tiposMovimiento}
-              onChange={(e) => handleChange('tipoMovimiento', e.value)}
-              placeholder="Seleccionar"
-              className={`w-full ${errors.tipoMovimiento ? 'p-invalid' : ''}`}
-            />
-            {errors.tipoMovimiento && (
-              <small className="p-error">{errors.tipoMovimiento}</small>
-            )}
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-700">Fecha *</label>
-            <Calendar
-              value={formData.fecha}
-              onChange={(e) =>
-                handleChange(
-                  'fecha',
-                  e.value instanceof Date ? e.value : new Date(e.value ?? new Date())
-                )
-              }
-              dateFormat="dd/mm/yy"
-              showIcon
-              className={`w-full ${errors.fecha ? 'p-invalid' : ''}`}
-            />
-            {errors.fecha && <small className="p-error">{errors.fecha}</small>}
-          </div>
-        </div>
-      </div>
-
-      {/* Depósitos */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700 border-b pb-1">Depósitos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="p-4 border rounded-lg shadow-sm space-y-6">
+      {/* Globales: Depósito + Razón + Observaciones */}
+      <div className="space-y-4 pb-6 border-b">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Dropdown
-            value={formData.depositoOrigen ?? null}
+            id="deposito"
+            value={idDeposito}
             options={depositos}
-            onChange={(e) => handleChange('depositoOrigen', e.value)}
-            placeholder="Depósito origen (opcional)"
+            onChange={(e) => setIdDeposito(e.value)}
             className="w-full"
-            showClear
+            placeholder="Depósito"
           />
           <Dropdown
-            value={formData.depositoDestino ?? null}
-            options={depositos}
-            onChange={(e) => handleChange('depositoDestino', e.value)}
-            placeholder="Depósito destino (opcional)"
+            id="razon"
+            value={idRazon}
+            options={razones}
+            onChange={(e) => setIdRazon(e.value)}
             className="w-full"
-            showClear
+            placeholder="Razón de movimiento"
           />
         </div>
-      </div>
-
-      {/* Otros datos */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700 border-b pb-1">Otros datos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Dropdown
-            value={formData.id_orden_compra ?? null}
-            options={ordenesCompra}
-            onChange={(e) => handleChange('id_orden_compra', e.value)}
-            placeholder="Orden de compra (opcional)"
-            className="w-full"
-            showClear
-          />
-          <Dropdown
-            value={formData.id_razon_movimiento ?? null}
-            options={razonesMovimiento}
-            onChange={(e) => handleChange('id_razon_movimiento', e.value)}
-            placeholder="Razón de movimiento (opcional)"
-            className="w-full"
-            showClear
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-semibold text-gray-700">Observaciones</label>
-          <InputTextarea
-            value={formData.observaciones}
-            onChange={(e) => handleChange('observaciones', e.target.value)}
-            rows={3}
-            className="w-full"
-            autoResize
-          />
-        </div>
-      </div>
-
-      {/* Insumos */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-700 border-b pb-1">Insumos *</h3>
-        <div className="max-h-[250px] overflow-y-auto">
-          <DetalleMovimientoTable
-            detalles={formData.detalles}
-            onChange={(detallesActualizados) =>
-              handleChange('detalles', detallesActualizados)
-            }
-          />
-        </div>
-        {errors.detalles && <small className="p-error">{errors.detalles}</small>}
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          label="Guardar movimiento"
-          icon="pi pi-check"
-          severity="success"
-          onClick={handleSubmit}
+        <InputTextarea
+          id="observaciones"
+          value={observaciones}
+          onChange={(e) => setObservaciones(e.target.value)}
+          rows={4}
+          className="w-full min-h-[120px]"
+          placeholder="Observaciones"
         />
       </div>
-    </section>
-  )
+
+      {/* Detalle de insumo + botones */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+        <div className="md:col-span-3 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Dropdown
+              id="insumo"
+              value={idInsumo}
+              options={insumos}
+              onChange={(e) => setIdInsumo(e.value)}
+              className="w-full"
+              placeholder="ID/Nombre insumo"
+              filter
+              showClear
+            />
+            <InputNumber
+              id="cantidad"
+              value={cantidad}
+              onValueChange={(e) => setCantidad(e.value ?? null)}
+              className="w-full"
+              placeholder="Cantidad"
+            />
+            <InputNumber
+              id="stockMinimo"
+              value={stockMinimo}
+              onValueChange={(e) => setStockMinimo(e.value ?? null)}
+              className="w-full"
+              placeholder="Stock mínimo en depósito"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <InputNumber
+              id="stockCritico"
+              value={stockCritico}
+              onValueChange={(e) => setStockCritico(e.value ?? null)}
+              className="w-full"
+              placeholder="Stock crítico en depósito"
+            />
+            <InputText
+              id="lote"
+              value={lote}
+              onChange={(e) => setLote(e.target.value)}
+              className="w-full"
+              placeholder="Lote (opcional)"
+            />
+            <Calendar
+              id="vencimiento"
+              value={vencimiento}
+              onChange={(e) => setVencimiento(e.value as Date)}
+              className="w-full"
+              dateFormat="yy-mm-dd"
+              placeholder="Vencimiento (opcional)"
+            />
+          </div>
+        </div>
+
+        {/* Botones */}
+        <div className="flex flex-col justify-center items-stretch gap-4">
+          <Button
+            label="Agregar"
+            severity="info"
+            icon="pi pi-plus"
+            onClick={handleAdd}
+            className="w-full py-3"
+          />
+          <Button
+            label="Limpiar"
+            severity="secondary"
+            icon="pi pi-trash"
+            onClick={handleClear}
+            className="w-full py-3"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
