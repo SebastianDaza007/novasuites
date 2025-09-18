@@ -43,7 +43,7 @@ export default function Page() {
   };
 
   const handleVerMovimientos = () => {
-    router.push("/insumos/movimientos");
+    router.push("/insumos/movimientos/movimientos-insumos");
   };
 
   const handleRegistrar = async () => {
