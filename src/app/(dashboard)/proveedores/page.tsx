@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import TablaProveedores from '@/components/pages/prov/tablaprov';
 import ProveedorForm from '@/components/pages/prov/form_altaprov';
 import EditProveedorForm from '@/components/pages/prov/edit/form_editprov';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import BotonCierre from '@/components/common/boton_cierre';
+import { Toast } from 'primereact/toast';
 
 export default function ProveedoresPage() {
     const [showModal, setShowModal] = useState(false);
     const [selectedProveedor, setSelectedProveedor] = useState<any>(null);
     const [refreshTick, setRefreshTick] = useState(0);
+    const toast = useRef<Toast>(null);
 
     const handleEditProveedor = (proveedor: any) => {
         setSelectedProveedor(proveedor);
@@ -31,6 +33,7 @@ export default function ProveedoresPage() {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
+                <Toast ref={toast} position="center" />
                 {/* Header Section */}
                 <div className="mb-4">
                     <h1 className="text-3xl font-bold text-gray-900">Gestión de Proveedores</h1>
@@ -67,6 +70,12 @@ export default function ProveedoresPage() {
                             onClose={handleCloseModal}
                             onSaved={() => {
                                 setRefreshTick((t) => t + 1);
+                                toast.current?.show({
+                                    severity: 'success',
+                                    summary: 'Éxito',
+                                    detail: 'Proveedor actualizado con éxito',
+                                    life: 3000,
+                                });
                             }}
                         />
                     ) : (
@@ -75,6 +84,14 @@ export default function ProveedoresPage() {
                             onClose={() => {
                                 setRefreshTick((t) => t + 1);
                                 handleCloseModal();
+                            }}
+                            onSaved={() => {
+                                toast.current?.show({
+                                    severity: 'success',
+                                    summary: 'Éxito',
+                                    detail: 'Proveedor registrado con éxito',
+                                    life: 3000,
+                                });
                             }}
                         />
                     )}

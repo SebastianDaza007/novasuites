@@ -9,9 +9,10 @@ import BotonCierre from "@/components/common/boton_cierre";
 interface ProveedorFormProps {
   proveedor?: any;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
-export default function ProveedorForm({ proveedor, onClose }: ProveedorFormProps) {
+export default function ProveedorForm({ proveedor, onClose, onSaved }: ProveedorFormProps) {
   const [formData, setFormData] = useState({
     nombre_proveedor: "",
     cuit_proveedor: "",
@@ -107,7 +108,8 @@ export default function ProveedorForm({ proveedor, onClose }: ProveedorFormProps
       await response.json();
 
       setSuccess(true);
-      alert("Proveedor guardado exitosamente!");
+      // Notificar al padre que se guardó correctamente
+      onSaved?.();
       setFormData({
         nombre_proveedor: "",
         cuit_proveedor: "",

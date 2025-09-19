@@ -240,24 +240,24 @@ const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
           style={{ whiteSpace: 'nowrap', width: '12rem' }}
           bodyClassName="whitespace-nowrap"
           bodyStyle={{ textAlign: 'center', paddingLeft: '0.5rem' }}
-          headerClassName="text-center"
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600 }}
+          headerClassName="text-right"
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'center', paddingLeft: '4.5rem' }}
         />
         <Column
           field="nombre_proveedor"
           header="Nombre"
           bodyStyle={{ textAlign: 'center' }}
           style={{ width: '14rem' }}
-          headerClassName="text-center"
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600 }}
+          headerClassName="text-right"
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'left', paddingLeft: '4.5rem' }}
         />
         <Column
           field="direccion_proveedor"
           header="Domicilio"
           bodyStyle={{ textAlign: 'center' }}
           style={{ width: '14rem' }}
-          headerClassName="text-center"
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600 }}
+          headerClassName="text-right"
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'left', paddingLeft: '4.5rem'}} //aca editar para la posicion de las columnas 
         />
         <Column
           field="contacto_responsable"
@@ -271,8 +271,8 @@ const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
           )}
           bodyStyle={{ textAlign: 'center' }}
           style={{ width: '11rem' }}
-          headerClassName="text-center"
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, paddingLeft: '0.25rem', paddingRight: '0.25rem' }}
+          headerClassName="text-right"
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'center', paddingLeft: '0.5rem' }}
         />
         <Column
           field="correo_proveedor"
@@ -286,8 +286,8 @@ const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
           )}
           bodyStyle={{ textAlign: 'center' }}
           style={{ width: '12rem' }}
-          headerClassName="text-center"
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'center', paddingLeft: '0.25rem', paddingRight: '0.25rem' }}
+          headerClassName="text-right"
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'center', paddingLeft: '4.5rem' }}
         />
         <Column
           field="activo"
@@ -295,14 +295,14 @@ const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
           body={estadoBodyTemplate}
           bodyStyle={{ textAlign: 'center' }}
           style={{ width: '8rem' }}
-          headerClassName="text-center"
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600 }}
+          headerClassName="text-right"
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'right', paddingLeft: '2rem' }}
         />
         <Column
           header="Acciones"
           body={accionesBodyTemplate}
           style={{ width: '10rem' }}
-          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: "left", paddingLeft: "2.5rem" }}
+          headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600, textAlign: 'right', paddingLeft: '2rem' }}
         />
       </DataTable>
       {error && (
