@@ -5,7 +5,7 @@ import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
-import BotonCierre from "@/components/common/boton_cierre";
+import BotonCierre from "@/components/boton_cierre";
 
 type EditProveedorFormProps = {
   onClose?: () => void;

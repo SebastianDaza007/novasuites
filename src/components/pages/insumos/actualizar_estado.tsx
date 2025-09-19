@@ -6,7 +6,7 @@ import TextAreaInput from "@/components/common/inputs/textarea";
 import ToggleInput from "@/components/common/inputs/toggleinput";
 import DropdownInput from "@/components/common/inputs/dropdown";
 import Button from "@/components/common/button";
-import BotonCierre from "@/components/common/boton_cierre";
+import BotonCierre from "@/components/boton_cierre";
 
 type ActualizarEstadoProps = {
   insumo?: {
