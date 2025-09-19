@@ -35,7 +35,7 @@ model insumo {
 model proveedor {
   id_proveedor         Int                 @id @default(autoincrement())
   nombre_proveedor     String
-  cuit_proveedor       Decimal             @unique @db.Decimal(11, 0)
+  cuit_proveedor       String              @unique
   direccion_proveedor  String
   telefono_proveedor   Int?
   correo_proveedor     String?
@@ -131,7 +131,15 @@ model orden_compra {
   movimientos            movimiento_inventario[]
   proveedor              proveedor               @relation(fields: [id_proveedor], references: [id_proveedor], onDelete: NoAction, onUpdate: NoAction)
   usuario_solicita       usuario                 @relation(fields: [id_usuario_solicita], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id_metodo              Int
+  metodo                 metodo_pago             @relation(fields: [id_metodo], references: [id_metodo_p])        
 }
+
+model metodo_pago{
+  id_metodo_p           Int                   @id @default(autoincrement())
+  nombre_metodo         String
+  orden_c              orden_compra[]
+  }
 
 model detalle_orden_compra {
   id_detalle_orden    Int          @id @default(autoincrement())
