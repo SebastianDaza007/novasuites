@@ -14,7 +14,7 @@ export default function DashboardLayout({
   const sidebarItems = [
     // { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
     { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Ver Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" },{ name: "Ver Movimientos", code: "", path: "/insumos/movimientos/movimientos-insumos" }]},
-    { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "registrar/editar proveedor",  path: "/proveedores" }]},
+    { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "registrar/editar proveedor",  path: "/proveedores" },{ name: "Facturas", path: "/facturas" }]},
     { icon: "pi-chart-line", label: "Reportes", path: "/reportes" , options: [{ name: "Facturas", path: "/facturas" }]},
   ];
 
