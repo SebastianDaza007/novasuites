@@ -1,124 +1,107 @@
-import { NextRequest, NextResponse } from 'next/server'
-import prisma from '../../../lib/prisma'
-import { z } from 'zod'
-import { Prisma } from '@prisma/client'
+export const dynamic = "force-dynamic";    // 👈 desactiva cache de ruta
+export const revalidate = 0;
 
-const createProveedorSchema = z.object({
-  nombre_proveedor: z.string().min(1, 'El nombre es requerido'),
-  cuit_proveedor: z.string()
-    .min(11, 'CUIT debe tener 11 dígitos')
-    .max(11, 'CUIT debe tener 11 dígitos')
-    .regex(/^\d+$/, 'CUIT debe contener solo números'),
-  direccion_proveedor: z.string().min(1, 'La dirección es requerida'),
-  telefono_proveedor: z.string().optional(),
-  correo_proveedor: z.string().email('Email inválido').optional(),
-  contacto_responsable: z.string().optional(),
-  condiciones_pago: z.string().optional(),
-  estado_proveedor: z.boolean().default(true),
-  observaciones: z.string().optional()
-})
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
-// GET /api/proveedores - Listar todos los proveedores
-export async function GET(request: NextRequest) {
+const toInt = (v: string | null, d: number) => {
+  const n = v ? Number.parseInt(v) : d;
+  return Number.isFinite(n) && n > 0 ? n : d;
+};
+
+const onlyDigits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+const is11 = (s: string) => /^\d{11}$/.test(s);
+const fmtCuit = (raw: string) => {
+  const s = raw.padStart(11, "0");
+  return `${s.slice(0,2)}-${s.slice(2,10)}-${s.slice(10)}`;
+};
+const phoneInt = (v: unknown): number | null => {
+  const digits = onlyDigits(v);
+  if (!digits) return null;
+  const n = Number(digits);
+  if (!Number.isFinite(n)) throw new Error("telefono inválido");
+  if (n > 2147483647) throw new Error("telefono excede INT4 (2147483647)");
+  return n;
+};
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const page = toInt(searchParams.get("page"), 1);
+  const pageSize = Math.min(toInt(searchParams.get("pageSize"), 10), 100);
+  const q = searchParams.get("q") || undefined;
+  const cuit = searchParams.get("cuit") || undefined;
+  const estado = searchParams.get("estado") as "activo" | "inactivo" | null;
+
+  const where: any = {};
+  if (q) where.nombre_proveedor = { contains: q, mode: "insensitive" };
+  if (cuit) {
+    const digits = onlyDigits(cuit);
+    if (digits) where.cuit_proveedor = { contains: digits }; // ahora es String 🎉
+  }
+  if (estado === "activo") where.activo = true;
+  if (estado === "inactivo") where.activo = false;
+
+  const [items, total] = await Promise.all([
+    prisma.proveedor.findMany({
+      where,
+      orderBy: { fecha_actualizacion: "desc" }, // existe en tu schema
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.proveedor.count({ where }),
+  ]);
+
+  // formateamos CUIT con puntos para la UI
+  const itemsFmt = items.map(p => ({
+    ...p,
+    cuit_proveedor: p.cuit_proveedor ? fmtCuit(p.cuit_proveedor) : p.cuit_proveedor,
+  }));
+
+  return NextResponse.json(
+    {
+      items: itemsFmt,
+      page, pageSize, total, totalPages: Math.ceil(total / pageSize),
+    },
+    { headers: { "Cache-Control": "no-store" } }   // 👈 cabecera anti-caché
+  );
+}
+
+export async function POST(req: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const search = searchParams.get('search') || ''
-    const estado = searchParams.get('estado')
+    const b = await req.json();
 
-    const where: Prisma.proveedorWhereInput = {}
-    
-    if (estado !== null) {
-      where.estado_proveedor = estado === 'true'
-    }
+    const nombre = b.nombre ?? b.nombre_prov ?? b.nombre_proveedor;
+    const direccion = b.direccion_proveedor ?? b.domicilio;
+    const cuitDigits = onlyDigits(b.cuit_proveedor ?? b.cuitCuil);
 
-    if (search) {
-      where.OR = [
-        { nombre_proveedor: { contains: search, mode: 'insensitive' } },
-        { cuit_proveedor: { contains: search } }
-      ]
-    }
+    if (!nombre) throw new Error("nombre_proveedor es requerido");
+    if (!direccion) throw new Error("direccion_proveedor es requerido");
+    if (!is11(cuitDigits)) throw new Error("cuit_proveedor debe tener 11 dígitos");
 
-    const [proveedores, total] = await Promise.all([
-      prisma.proveedor.findMany({
-        where,
-        include: {
-          _count: {
-            select: {
-              insumos: true,
-              ordenes_compra: true,
-              facturas: true
-            }
-          }
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: {
-          nombre_proveedor: 'asc'
-        }
-      }),
-      prisma.proveedor.count({ where })
-    ])
+    const created = await prisma.proveedor.create({
+      data: {
+        nombre_proveedor: nombre,
+        direccion_proveedor: direccion,
+        cuit_proveedor: cuitDigits, // guardamos solo dígitos
+        telefono_proveedor: phoneInt(b.telefono ?? b.telefono_proveedor),
+        contacto_responsable: phoneInt(b.telefonoResp ?? b.contacto_responsable),
+        correo_proveedor: b.correo ?? b.email ?? b.correo_proveedor ?? null,
+        condiciones_pago: b.condiciones_pago ?? null,
+        observaciones: b.observaciones ?? null,
+        activo: b.activo ?? true,
+      },
+    });
 
-    return NextResponse.json({
-      success: true,
-      data: proveedores,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching proveedores:', error)
+    // devolver formateado para la UI
     return NextResponse.json(
-      { success: false, message: 'Error al obtener proveedores' },
-      { status: 500 }
-    )
+      { ...created, cuit_proveedor: fmtCuit(created.cuit_proveedor) },
+      { status: 201 }
+    );
+  } catch (e: any) {
+    if (e?.code === "P2002") {
+      return NextResponse.json({ error: "CUIT ya existe" }, { status: 409 });
+    }
+    return NextResponse.json({ error: e?.message ?? "Error creando" }, { status: 400 });
   }
 }
 
-// POST /api/proveedores - Crear nuevo proveedor
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const validatedData = createProveedorSchema.parse(body)
-
-    // Verificar que el CUIT no esté duplicado
-    const existingProveedor = await prisma.proveedor.findUnique({
-      where: { cuit_proveedor: validatedData.cuit_proveedor }
-    })
-
-    if (existingProveedor) {
-      return NextResponse.json({
-        success: false,
-        message: 'Ya existe un proveedor con este CUIT'
-      }, { status: 400 })
-    }
-
-    const nuevoProveedor = await prisma.proveedor.create({
-      data: validatedData
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: nuevoProveedor,
-      message: 'Proveedor creado exitosamente'
-    }, { status: 201 })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        message: 'Datos inválidos',
-        errors: error.issues
-      }, { status: 400 })
-    }
-    console.error('Error creating proveedor:', error)
-    return NextResponse.json(
-      { success: false, message: 'Error al crear proveedor' },
-      { status: 500 }
-    )
-  }
-}
