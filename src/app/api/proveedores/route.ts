@@ -11,8 +11,9 @@ const toInt = (v: string | null, d: number) => {
 
 const onlyDigits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const is11 = (s: string) => /^\d{11}$/.test(s);
-const fmtCuit = (raw: string) => {
-  const s = raw.padStart(11, "0");
+const fmtCuit = (raw: string | null | any) => {
+  if (!raw) return raw;
+  const s = String(raw).padStart(11, "0");
   return `${s.slice(0,2)}-${s.slice(2,10)}-${s.slice(10)}`;
 };
 const phoneInt = (v: unknown): number | null => {

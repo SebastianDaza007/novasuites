@@ -182,9 +182,8 @@ const EditProveedorForm: React.FC<EditProveedorFormProps> = ({ onClose, onSaved,
 
       {errorMsg && <div className="text-red-600 text-sm">{errorMsg}</div>}
 
-      {/* Footer row: Estado (left) + Actions (right) */}
-      <div className="flex items-center justify-between pt-6">
-        {/* Estado - left */}
+      {/* Estado */}
+      <div className="flex items-start pt-6">
         <div className="flex flex-col gap-2">
           <label className="text-sm text-gray-700">Estado</label>
           <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden divide-x divide-gray-300 bg-white">
@@ -192,12 +191,12 @@ const EditProveedorForm: React.FC<EditProveedorFormProps> = ({ onClose, onSaved,
             <Button type="button" label="Inactivo" className={`${formData.estado === 'Inactivo' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-blue-50'} font-semibold rounded-none w-24 h-10 justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300`} outlined={formData.estado !== 'Inactivo'} onClick={() => setFormData(prev => ({ ...prev, estado: 'Inactivo' }))} />
           </div>
         </div>
+      </div>
 
-        {/* Actions - right */}
-        <div className="flex items-center gap-3">
-          <Button label="Cancelar" icon="pi pi-times" severity="danger" className="rounded-lg w-28 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center" onClick={onClose} disabled={loading} />
-          <Button label={loading ? 'Guardando...' : 'Guardar Cambios'} icon="pi pi-check" severity="success" className="rounded-lg w-28 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center" onClick={handleSave} disabled={loading} />
-        </div>
+      {/* Actions - full width at bottom */}
+      <div className="flex items-center gap-3 pt-4">
+        <Button label="Cancelar" icon="pi pi-times" severity="danger" className="rounded-lg flex-1 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center" onClick={onClose} disabled={loading} />
+        <Button label={loading ? 'Guardando...' : 'Guardar Cambios'} icon="pi pi-check" severity="success" className="rounded-lg flex-1 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center" onClick={handleSave} disabled={loading} />
       </div>
     </div>
   );

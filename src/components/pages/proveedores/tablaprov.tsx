@@ -114,22 +114,24 @@ const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
     <div className="flex flex-col gap-3 p-3">
       <div className="flex gap-3 flex-wrap items-center w-full">
         <span className="p-input-icon-left">
-          <i className="pi pi-search" />
+          <i className="pi pi-search" style={{ left: '1rem' }} />
           <InputText
             value={cuitFilter}
             onChange={(e) => setCuitFilter(e.target.value)}
             placeholder="CUIT/CUIL"
             className="p-inputtext-sm w-48 border border-gray-300 rounded"
+            style={{ paddingLeft: '3rem' }}
           />
         </span>
 
         <span className="p-input-icon-left">
-          <i className="pi pi-search" />
+          <i className="pi pi-search" style={{ left: '1rem' }} />
           <InputText
             value={nombreFilter}
             onChange={(e) => setNombreFilter(e.target.value)}
             placeholder="Nombre Proveedor"
             className="p-inputtext-sm w-64 border border-gray-300 rounded"
+            style={{ paddingLeft: '3rem' }}
           />
         </span>
 

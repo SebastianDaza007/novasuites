@@ -267,9 +267,8 @@ export default function ProveedorForm({ proveedor, onClose }: ProveedorFormProps
         </p>
       </div>
 
-      {/* Footer row: Estado (left) + Actions (right) */}
-      <div className="flex items-center justify-between pt-6">
-        {/* Estado - left */}
+      {/* Estado */}
+      <div className="flex items-start pt-6">
         <div className="flex flex-col gap-2">
           <label className="text-sm text-gray-700">Estado</label>
           <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden divide-x divide-gray-300 bg-white">
@@ -293,29 +292,30 @@ export default function ProveedorForm({ proveedor, onClose }: ProveedorFormProps
             />
           </div>
         </div>
-        {/* Actions - right */}
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            label="Cancelar"
-            icon="pi pi-times"
-            severity="danger"
-            className="rounded-lg w-28 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center"
-            onClick={() => {
-              onClose?.();
-            }}
-            disabled={loading}
-          />
-          <Button
-            label={success ? "¡Guardado!" : "Registrar"}
-            icon={success ? "pi pi-check" : "pi pi-save"}
-            loading={loading}
-            type="submit"
-            severity="success"
-            className="rounded-lg w-28 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center"
-            disabled={loading}
-          />
-        </div>
+      </div>
+
+      {/* Actions - full width at bottom */}
+      <div className="flex items-center gap-3 pt-4">
+        <Button
+          type="button"
+          label="Cancelar"
+          icon="pi pi-times"
+          severity="danger"
+          className="rounded-lg flex-1 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center"
+          onClick={() => {
+            onClose?.();
+          }}
+          disabled={loading}
+        />
+        <Button
+          label={success ? "¡Guardado!" : "Registrar"}
+          icon={success ? "pi pi-check" : "pi pi-save"}
+          loading={loading}
+          type="submit"
+          severity="success"
+          className="rounded-lg flex-1 h-10 font-semibold text-white shadow-sm hover:shadow-md transition-shadow justify-center"
+          disabled={loading}
+        />
       </div>
     </form>
   );

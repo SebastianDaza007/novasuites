@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import TablaProveedores from '@/components/tablas/tablaprov';
-import ProveedorForm from '@/components/formulario/form_altaprov';
-import EditProveedorForm from '@/components/pages/prov/edit/form_editprov';
+import TablaProveedores from '@/components/pages/proveedores/tablaprov';
+import ProveedorForm from '@/components/pages/proveedores/form_altaprov';
+import EditProveedorForm from '@/components/pages/proveedores/edit/form_editprov';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import BotonCierre from '@/components/boton_cierre';
