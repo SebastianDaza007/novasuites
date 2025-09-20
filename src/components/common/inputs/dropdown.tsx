@@ -11,6 +11,7 @@ type DropdownInputProps = {
     placeholder?: string;
     className?: string;
     disabled?: boolean;
+    labelClassName?: string; // Clase opcional para personalizar el label
 };
 
 const DropdownInput: React.FC<DropdownInputProps> = ({
@@ -21,10 +22,13 @@ const DropdownInput: React.FC<DropdownInputProps> = ({
     placeholder,
     className = "",
     disabled = false,
+    labelClassName,
 }) => {
     return (
         <div className="flex flex-col">
-            {label && <label className="font-medium mb-2 text-gray-900">{label}</label>}
+            {label && (
+                <label className={`font-medium mb-2 ${labelClassName ?? "text-gray-900"}`}>{label}</label>
+            )}
             <Dropdown
                 value={value}
                 onChange={(e) => onChange(e.value)}

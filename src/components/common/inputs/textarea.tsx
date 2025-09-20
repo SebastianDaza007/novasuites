@@ -13,6 +13,7 @@ type TextAreaInputProps = {
                           // Columnas visibles
     disabled?: boolean;                   // Deshabilitado
     label?: string;                        // Label opcional
+    labelClassName?: string;               // Clase opcional para estilizar el label desde fuera
 };
 
 const TextAreaInput: React.FC<TextAreaInputProps> = ({
@@ -24,11 +25,14 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
 
     disabled = false,
     label,
+    labelClassName,
 }) => {
     return (
         <div className="flex flex-col">
             {/* Label opcional */}
-            {label && <label className="font-bold mb-2">{label}</label>}
+            {label && (
+                <label className={`font-bold mb-2 ${labelClassName ?? ""}`}>{label}</label>
+            )}
 
             <InputTextarea
                 value={value}
