@@ -241,7 +241,7 @@ const TablaProveedores = ({ onEdit }: TablaProveedoresProps) => {
           body={(row) => row.cuit_proveedor ?? "-"}
           style={{ whiteSpace: 'nowrap', width: '12rem' }}
           bodyClassName="whitespace-nowrap"
-          bodyStyle={{ textAlign: 'center', paddingLeft: '0.5rem' }}
+          bodyStyle={{ textAlign: 'center', paddingLeft: '1rem' }}
           headerClassName="text-center"
           headerStyle={{ backgroundColor: "white", color: "black", fontWeight: 600 }}
         />
