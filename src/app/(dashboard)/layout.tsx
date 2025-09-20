@@ -1,8 +1,8 @@
 // src/app/(dashboard)/layout.tsx
 "use client"
 import React from "react";
-import Sidebar from "@/components/sidebar/sidebar";
-import DashboardNavbar from "@/components/dashboardNavbar/dashboardNavbar";
+import Sidebar from "@/components/pages/dashboard_layout/sidebar";
+import DashboardNavbar from "@/components/pages/dashboard_layout/dashboardNavbar";
 
 
 
@@ -12,20 +12,22 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const sidebarItems = [
-    { icon: "pi-box", label: "Depósito", path: "/deposito" },
-    { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" },
-    { icon: "pi-users", label: "Proveedores", path: "/proveedores" },
-    { icon: "pi-chart-line", label: "Reportes", path: "/reportes" },
+    // { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
+    { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Ver Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" },{ name: "Ver Movimientos", code: "", path: "/insumos/movimientos/movimientos-insumos" }]},
+    { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "Registrar/Ver Proveedores",  path: "/proveedores" }, { name: "Facturas", path: "/facturas" }]},
+    { icon: "pi-chart-line", label: "Reportes", path: "/reportes" , options: [{ name: "Facturas", path: "/facturas" }]},
   ];
 
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
+      
       {/* Sidebar fijo a la izquierda */}
       <Sidebar title="Nova Suites" items={sidebarItems} />
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
         {/* Navbar arriba */}
         <DashboardNavbar
           idUsuario={5}   
@@ -49,7 +51,10 @@ export default function DashboardLayout({
         />
 
         {/* Contenido de la página */}
-        <main className="flex-1 p-6 bg-gray-100">{children}</main>
+        {/* <main className="flex-1 p-6 bg-gray-100 overflow-auto"> */}
+        <main className="flex-1 h-full overflow-auto p-0 bg-white">
+          {children}
+        </main>      
       </div>
     </div>
   );
