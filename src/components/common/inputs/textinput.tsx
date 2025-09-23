@@ -12,6 +12,7 @@ type TextInputProps = {
     disabled?: boolean;  
     label?: string; // ✅ nueva prop para el label                 // Indica si el input está deshabilitado
     icon?: string;                     // Icono opcional para mostrar dentro del input
+    labelClassName?: string;           // Clase opcional para estilizar el label desde fuera
 };
 
 // Componente reutilizable de InputText
@@ -23,11 +24,14 @@ const TextInput: React.FC<TextInputProps> = ({
     disabled = false, // valor por defecto si no se indica disabled
     label,
     icon,
+    labelClassName,
 }) => {
     return (
         <div className="flex flex-col">
             {/* ✅ Mostramos el label si se pasó */}
-            {label && <label className="font-bold mb-2 text-gray-700">{label}</label>}
+            {label && (
+                <label className={`font-bold mb-2 ${labelClassName ?? "text-gray-700"}`}>{label}</label>
+            )}
 
             {/* 👇 Si hay icono, usamos wrapper especial de PrimeReact */}
             <span className={icon ? "p-input-icon-left w-full" : "w-full"}>
