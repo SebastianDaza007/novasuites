@@ -35,13 +35,12 @@ model insumo {
 model proveedor {
   id_proveedor         Int                 @id @default(autoincrement())
   nombre_proveedor     String
-  cuit_proveedor       Decimal             @unique @db.Decimal(11, 0)
+  cuit_proveedor       String              @unique
   direccion_proveedor  String
   telefono_proveedor   Int?
   correo_proveedor     String?
   nombre_responsable   String?
   contacto_responsable Int?
-  condiciones_pago     String?
   activo               Boolean             @default(true)
   observaciones        String?
   fecha_creacion       DateTime?           @default(now()) @db.Timestamp(6)
@@ -118,11 +117,10 @@ model detalle_movimiento_inventario {
 model orden_compra {
   id_orden_compra        Int                     @id @default(autoincrement())
   numero_orden           String                  @unique
-  fecha_orden            DateTime?               @default(now()) @db.Timestamp(6)
-  fecha_entrega_estimada DateTime?               @db.Timestamp(6)
+  fecha_orden            DateTime                @default(now()) @db.Timestamp(6)
+  fecha_entrega_estimada DateTime               @db.Timestamp(6)
   estado_orden           estados_orden           @default(PENDIENTE)
   observaciones          String?
-  fecha_creacion         DateTime?               @default(now()) @db.Timestamp(6)
   fecha_actualizacion    DateTime?               @updatedAt @db.Timestamp(6)
   id_proveedor           Int
   id_usuario_solicita    Int
@@ -131,7 +129,9 @@ model orden_compra {
   movimientos            movimiento_inventario[]
   proveedor              proveedor               @relation(fields: [id_proveedor], references: [id_proveedor], onDelete: NoAction, onUpdate: NoAction)
   usuario_solicita       usuario                 @relation(fields: [id_usuario_solicita], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
 }
+
 
 model detalle_orden_compra {
   id_detalle_orden    Int          @id @default(autoincrement())
