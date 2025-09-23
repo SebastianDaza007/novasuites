@@ -9,7 +9,7 @@ export default function FacturasPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Prueba: Registrar Factura</h1>
+      <h1 className="text-2xl font-bold mb-4">Registrar Factura</h1>
 
       <Button
         label="Nueva factura"
