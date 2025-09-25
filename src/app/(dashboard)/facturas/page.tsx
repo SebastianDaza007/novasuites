@@ -4,6 +4,7 @@ import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Toast } from 'primereact/toast';
 import FacturasFilters from '@/components/pages/facturas/FacturasFilters';
 import FacturasTable from '@/components/pages/facturas/FacturasTable';
+import FacturaForm from '@/components/pages/registrar_factura/FacturaForm';
 import { useFacturas } from '@/hooks/useFacturas';
 
 interface SummaryData {
@@ -15,6 +16,7 @@ interface SummaryData {
 
 const FacturasPage = () => {
   const toast = useRef<Toast>(null);
+  const [showRegistrarFactura, setShowRegistrarFactura] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryData>({
     totalPendiente: 0,
     totalPagado: 0,
@@ -118,13 +120,13 @@ const FacturasPage = () => {
   }, []);
 
   const handleRegistrarFactura = useCallback(() => {
-    toast.current?.show({
-      severity: 'info',
-      summary: 'Redirigiendo a...',
-      detail: 'Funcionalidad en desarrollo',
-      life: 3000
-    });
+    setShowRegistrarFactura(true);
   }, []);
+
+  const handleFacturaRegistrada = useCallback(() => {
+    setShowRegistrarFactura(false);
+    fetchFacturas(); // Actualizar la lista de facturas
+  }, [fetchFacturas]);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -224,6 +226,13 @@ const FacturasPage = () => {
           onSort={onSort}
         />
       </div>
+
+      {/* Modal de registro de factura */}
+      <FacturaForm
+        visible={showRegistrarFactura}
+        onHide={() => setShowRegistrarFactura(false)}
+        onSuccess={handleFacturaRegistrada}
+      />
     </div>
   );
 };

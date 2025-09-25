@@ -117,7 +117,7 @@ model orden_compra {
   id_orden_compra        Int                     @id @default(autoincrement())
   numero_orden           String                  @unique
   fecha_orden            DateTime                @default(now()) @db.Timestamp(6)
-  fecha_entrega_estimada DateTime                @db.Timestamp(6)
+  fecha_entrega_estimada DateTime               @db.Timestamp(6)
   estado_orden           estados_orden           @default(PENDIENTE)
   observaciones          String?
   fecha_actualizacion    DateTime?               @updatedAt @db.Timestamp(6)
@@ -128,7 +128,9 @@ model orden_compra {
   movimientos            movimiento_inventario[]
   proveedor              proveedor               @relation(fields: [id_proveedor], references: [id_proveedor], onDelete: NoAction, onUpdate: NoAction)
   usuario_solicita       usuario                 @relation(fields: [id_usuario_solicita], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
 }
+
 
 model detalle_orden_compra {
   id_detalle_orden    Int          @id @default(autoincrement())
@@ -162,7 +164,6 @@ model detalle_factura_proveedor {
   cantidad           Int
   id_factura         Int
   id_insumo          Int
-  precio             Decimal           @default(0.00) @db.Decimal(10, 2)
   factura_proveedor  factura_proveedor @relation(fields: [id_factura], references: [id_factura], onDelete: NoAction, onUpdate: NoAction)
   insumo             insumo            @relation(fields: [id_insumo], references: [id_insumo], onDelete: NoAction, onUpdate: NoAction)
 }

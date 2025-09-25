@@ -18,9 +18,10 @@ type InsumoDetalle = {
 interface FacturaFormProps {
   visible: boolean;
   onHide: () => void;
+  onSuccess?: () => void;
 }
 
-export default function FacturaForm({ visible, onHide }: FacturaFormProps) {
+export default function FacturaForm({ visible, onHide, onSuccess }: FacturaFormProps) {
   const toast = useRef<Toast>(null);
 
   // 🔹 Estados del header
@@ -119,7 +120,12 @@ export default function FacturaForm({ visible, onHide }: FacturaFormProps) {
       setObservaciones("");
       setInsumos([]);
 
-      onHide();
+      // Llamar callback de éxito si existe
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onHide();
+      }
     } catch (error) {
       console.error("❌ Error en handleSubmit:", error);
       showError("Error interno al registrar factura");
