@@ -105,7 +105,6 @@ model movimiento_inventario {
 model detalle_movimiento_inventario {
   id_detalle        Int                   @id @default(autoincrement())
   cantidad          Int
-  costo_unitario    Decimal?              @db.Decimal(10, 2)
   lote              String?
   fecha_vencimiento DateTime?             @db.Timestamp(6)
   id_movimiento     Int
@@ -161,6 +160,7 @@ model factura_proveedor {
 
 model detalle_factura_proveedor {
   id_detalle_factura Int               @id @default(autoincrement())
+  precio             Decimal           @db.Decimal(10,2) @default(0.00)
   cantidad           Int
   id_factura         Int
   id_insumo          Int
