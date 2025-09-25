@@ -158,6 +158,7 @@ model factura_proveedor {
 
 model detalle_factura_proveedor {
   id_detalle_factura Int               @id @default(autoincrement())
+  precio             Decimal           @db.Decimal(10,2) @default(0.00)
   cantidad           Int
   id_factura         Int
   id_insumo          Int
