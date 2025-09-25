@@ -13,6 +13,8 @@ import TextAreaInput from "@/components/common/inputs/textarea";
 import ToggleInput from "@/components/common/inputs/toggleinput";
 import DateInput from "@/components/common/inputs/inputfecha";
 import DepositoDropdown from "@/components/pages/insumos/deposito_dropdown";
+import ActualizarEstado from "@/components/pages/insumos/actualizar_estado"; 
+
 
 // 📌 Tipo que representa la forma en la que el backend nos devuelve los insumos (1 fila por depósito)
 type Insumo = {
@@ -20,6 +22,7 @@ type Insumo = {
   nombre: string;
   descripcion: string | null;
   categoria: string;
+  id_categoria?: number | null;   // 👈 nuevo: id real de la BD
   stock: number;
   estado: boolean;
   deposito: string;
@@ -42,6 +45,12 @@ export default function InsumosPage() {
   const [categoria, setCategoria] = useState<number | null>(null);
   const [estado, setEstado] = useState<boolean>(true);
   const [error, setError] = useState("");
+
+  // ================================
+  //  Estados del formulario de actualización
+  // ================================
+  const [insumoSeleccionado, setInsumoSeleccionado] = useState<Insumo | null>(null);
+  const [mostrarEditar, setMostrarEditar] = useState(false);
 
   // ================================
   //  Estados para filtros (buscador)
@@ -266,7 +275,21 @@ export default function InsumosPage() {
           )}
         />
         <Column field="ultimaActualizacion" header="Última actualización" sortable />
-        <Column header="Acciones" body={() => <Button icon="pi pi-pencil" severity="secondary" rounded text />} />
+        <Column 
+          header="Acciones"
+          body={(row: Insumo) => (
+            <Button
+              icon="pi pi-pencil"
+              severity="secondary"
+              rounded
+              text
+              onClick={() => {
+                setInsumoSeleccionado(row);
+                setMostrarEditar(true);
+              }}
+            />
+          )} 
+        />
       </DataTable>
 
       {/* ================================
@@ -321,6 +344,53 @@ export default function InsumosPage() {
             className="w-full"
           />
         </div>
+      </Dialog>
+
+      {/*Modal de edición de insumo */}
+      <Dialog
+        header="Actualizar insumo"
+        visible={mostrarEditar}
+        style={{ width: "500px" }}
+        modal
+        onHide={() => setMostrarEditar(false)}
+      >
+        {insumoSeleccionado && (
+          <ActualizarEstado
+            insumo={{
+              id: insumoSeleccionado.id,
+              nombre: insumoSeleccionado.nombre,
+              descripcion: insumoSeleccionado.descripcion || "",
+              id_categoria: insumoSeleccionado.id_categoria,   // 👈 pasamos el ID real
+              estado: insumoSeleccionado.estado,
+            }}
+            onClose={() => setMostrarEditar(false)}
+            onSave={async (data) => {
+              try {
+                const payload = {
+                  nombre_insumo: data.nombre,
+                  descripcion_insumo: data.descripcion,
+                  id_categoria: Number(data.categoria), // 👈 ya es ID
+                  activo: data.estado,
+                };
+
+                const res = await fetch(`/api/insumos/${insumoSeleccionado.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!res.ok) throw new Error("No se pudo actualizar el insumo");
+
+                const actualizado: Insumo = await res.json();
+                setProductos((prev) =>
+                  prev.map((p) => (p.id === actualizado.id ? actualizado : p))
+                );
+              } catch (error) {
+                console.error("❌ Error actualizando insumo:", error);
+              }
+            }}
+          />
+        )}
       </Dialog>
     </div>
   );

@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
                 nombre: i.nombre_insumo,
                 descripcion: i.descripcion_insumo,
                 categoria: i.categoria?.nombre_categoria || "Sin categoría",
+                id_categoria: i.id_categoria, // para editar insumo
                 stock: 0,
                 deposito: "Sin depósito",
                 estado: i.activo,
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
             nombre: i.nombre_insumo,
             descripcion: i.descripcion_insumo,
             categoria: i.categoria?.nombre_categoria || "Sin categoría",
+            id_categoria: i.id_categoria, // para editar insumo
             stock: sd.cantidad_actual,
             deposito: sd.deposito.nombre_deposito,
             estado: i.activo,
@@ -148,6 +150,7 @@ export async function POST(req: NextRequest) {
         nombre: creado.nombre_insumo,
         descripcion: creado.descripcion_insumo,
         categoria: creado.categoria?.nombre_categoria || "Sin categoría",
+        id_categoria: creado.id_categoria, // agregado tambien
         stock: 0,                       // 👉 recién creado => 0
         deposito: "Sin depósito",       // 👉 hasta HU-04
         estado: creado.activo,
