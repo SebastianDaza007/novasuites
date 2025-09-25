@@ -6,6 +6,7 @@ import { Card } from 'primereact/card';
 import {
   FacturasFiltros,
   Proveedor,
+  EstadoFactura,
   TipoFactura,
   NumeroFactura,
   OrdenCompraOption
@@ -14,6 +15,7 @@ import {
 interface FacturasFiltersProps {
   filtros: FacturasFiltros;
   proveedores: Proveedor[];
+  estadosFactura: EstadoFactura[];
   tiposFactura: TipoFactura[];
   numerosFactura: NumeroFactura[];
   ordenesCompra: OrdenCompraOption[];
@@ -30,6 +32,7 @@ interface FacturasFiltersProps {
 const FacturasFilters: React.FC<FacturasFiltersProps> = ({
   filtros,
   proveedores,
+  estadosFactura,
   tiposFactura,
   numerosFactura,
   ordenesCompra,
@@ -63,7 +66,7 @@ const FacturasFilters: React.FC<FacturasFiltersProps> = ({
 
       {/* Sistema de Filtros */}
       <Card className="p-4 shadow-lg rounded-t-lg rounded-b-none mb-0" style={{ backgroundColor: '#eff3f8', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="flex flex-col">
             <label htmlFor="numeroFactura" className="text-sm font-medium mb-2 text-gray-700">
               Nro Factura
@@ -100,6 +103,23 @@ const FacturasFilters: React.FC<FacturasFiltersProps> = ({
               showClear
               filter
               filterPlaceholder="Buscar proveedor..."
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label htmlFor="estadoFactura" className="text-sm font-medium mb-2 text-gray-700">
+              Estado
+            </label>
+            <Dropdown
+              id="estadoFactura"
+              value={filtros.estadoFactura}
+              options={estadosFactura}
+              onChange={(e) => onFiltroChange('estadoFactura', e.value)}
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Todos los estados"
+              className="w-full"
+              showClear
             />
           </div>
 

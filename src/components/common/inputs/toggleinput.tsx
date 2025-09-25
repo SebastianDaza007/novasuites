@@ -9,11 +9,12 @@ type OptionType = string | { label: string; value: OptionValue };
 
 type ToggleInputProps<T extends OptionValue = boolean> = {
     value: T;
-    onChange: React.Dispatch<React.SetStateAction<T>>;
+    onChange: (value: T) => void;
     options: OptionType[];
     label?: string;
     className?: string;
     disabled?: boolean;
+    labelClassName?: string; // Clase opcional para personalizar el label
 };
 
 const ToggleInput = <T extends OptionValue = boolean>({
@@ -23,10 +24,13 @@ const ToggleInput = <T extends OptionValue = boolean>({
     label,
     className = "",
     disabled = false,
+    labelClassName,
 }: ToggleInputProps<T>) => {
     return (
         <div className="flex flex-col w-full">
-        {label && <label className="font-bold mb-2">{label}</label>}
+        {label && (
+            <label className={`font-bold mb-2 ${labelClassName ?? ""}`}>{label}</label>
+        )}
 
         <SelectButton
             value={value}

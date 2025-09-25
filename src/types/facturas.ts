@@ -20,6 +20,7 @@ export interface FacturaDetalle {
   detalles: {
     id_detalle_factura: number;
     cantidad: number;
+    precio: number;
     insumo: {
       id_insumo: number;
       nombre_insumo: string;

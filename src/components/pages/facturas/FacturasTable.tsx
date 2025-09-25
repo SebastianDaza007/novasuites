@@ -38,6 +38,15 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
     });
   };
 
+  const formatDateOnly = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -76,12 +85,21 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
       }
     };
 
+    const mostrarFechaVencimiento = rowData.estado_factura === 'PENDIENTE' || rowData.estado_factura === 'VENCIDA';
+
     return (
-      <Tag
-        value={getLabel(rowData.estado_factura)}
-        severity={getSeverity(rowData.estado_factura)}
-        className="text-xs"
-      />
+      <div className="flex flex-col gap-1">
+        <Tag
+          value={getLabel(rowData.estado_factura)}
+          severity={getSeverity(rowData.estado_factura)}
+          className="text-xs"
+        />
+        {mostrarFechaVencimiento && rowData.fecha_vencimiento && (
+          <small className="text-orange-600">
+            Vence: {formatDateOnly(rowData.fecha_vencimiento)}
+          </small>
+        )}
+      </div>
     );
   };
 
@@ -128,14 +146,31 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
       setShowModal(true);
     };
 
+    const handlePagos = () => {
+      // Funcionalidad futura para gestionar pagos
+      console.log('Abrir modal de pagos para factura:', rowData.id_factura);
+    };
+
     return (
-      <Button
-        icon="pi pi-eye"
-        className="p-button-text p-button-secondary"
-        onClick={handleVerDetalles}
-        tooltip="Ver detalles"
-        tooltipOptions={{ position: 'top' }}
-      />
+      <div className="flex gap-1 justify-center">
+        <Button
+          icon="pi pi-eye"
+          className="p-button-text p-button-secondary"
+          onClick={handleVerDetalles}
+          tooltip="Ver detalles"
+          tooltipOptions={{ position: 'top' }}
+        />
+        <Button
+          icon="pi pi-dollar"
+          className={rowData.estado_factura === 'PENDIENTE'
+            ? "p-button-text p-button-success"
+            : "p-button-text p-button-secondary opacity-50"}
+          onClick={handlePagos}
+          tooltip="Registrar pago"
+          tooltipOptions={{ position: 'top' }}
+          disabled={rowData.estado_factura !== 'PENDIENTE'}
+        />
+      </div>
     );
   };
 
@@ -173,7 +208,6 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
         <Column
           field="numero_factura"
           header="Nro Factura"
-          sortable
           style={{ minWidth: '130px' }}
           headerStyle={{ textAlign: 'center' }}
           bodyStyle={{ fontWeight: 'bold' }}
@@ -183,7 +217,6 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
           field="proveedor.nombre_proveedor"
           header="Proveedor"
           body={proveedorBodyTemplate}
-          sortable
           style={{ minWidth: '200px' }}
           headerStyle={{ textAlign: 'center' }}
         />
@@ -233,9 +266,9 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
         />
 
         <Column
-          header="Detalles"
+          header="Acciones"
           body={detallesBodyTemplate}
-          style={{ minWidth: '100px', textAlign: 'center' }}
+          style={{ minWidth: '120px', textAlign: 'center' }}
           headerStyle={{ textAlign: 'center' }}
           bodyStyle={{ textAlign: 'center' }}
         />
@@ -261,8 +294,23 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-4 py-2 border-b">
+                <span className="font-medium text-gray-700">CUIT:</span>
+                <span>{selectedFactura.proveedor.cuit_proveedor}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 py-2 border-b">
                 <span className="font-medium text-gray-700">Fecha de alta:</span>
                 <span>{formatDateTime(selectedFactura.fecha_carga || null)}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 py-2 border-b">
+                <span className="font-medium text-gray-700">Fecha de emisión:</span>
+                <span>{formatDateOnly(selectedFactura.fecha_emision)}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 py-2 border-b">
+                <span className="font-medium text-gray-700">Fecha de vencimiento:</span>
+                <span>{formatDateOnly(selectedFactura.fecha_vencimiento)}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-4 py-2 border-b">
@@ -297,21 +345,23 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
             {/* Insumos */}
             <div>
               <h4 className="font-semibold mb-3 text-lg">Insumos</h4>
+
+              {/* Encabezados */}
+              <div className="grid grid-cols-4 gap-4 py-2 border-b-2 border-gray-300 mb-2">
+                <div className="font-medium text-gray-700">Insumo</div>
+                <div className="font-medium text-gray-700">Cantidad</div>
+                <div className="font-medium text-gray-700">Precio Unitario</div>
+                <div className="font-medium text-gray-700">Subtotal</div>
+              </div>
+
+              {/* Filas de datos */}
               <div className="space-y-2">
                 {selectedFactura.detalles.map((detalle) => (
-                  <div key={detalle.id_detalle_factura} className="grid grid-cols-3 gap-4 py-3 border-b border-gray-200">
-                    <div>
-                      <span className="font-medium text-gray-700">Insumo:</span>
-                      <div className="mt-1">{detalle.insumo.nombre_insumo}</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Cantidad:</span>
-                      <div className="mt-1">{detalle.cantidad} unidades</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Precio Unitario:</span>
-                      <div className="mt-1 text-gray-500">No disponible</div>
-                    </div>
+                  <div key={detalle.id_detalle_factura} className="grid grid-cols-4 gap-4 py-3 border-b border-gray-200">
+                    <div>{detalle.insumo.nombre_insumo}</div>
+                    <div>{detalle.cantidad} unidades</div>
+                    <div className="font-medium text-green-600">{formatCurrency(detalle.precio)}</div>
+                    <div className="font-bold text-blue-600">{formatCurrency(detalle.cantidad * detalle.precio)}</div>
                   </div>
                 ))}
               </div>
@@ -321,7 +371,13 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
             <div className="border-t pt-4">
               <div className="grid grid-cols-2 gap-4 py-2">
                 <span className="font-bold text-gray-700 text-lg">Total:</span>
-                <span className="font-bold text-lg text-blue-600">{formatCurrency(selectedFactura.costo_total)}</span>
+                <span className="font-bold text-lg text-blue-600">
+                  {formatCurrency(
+                    selectedFactura.detalles.reduce((total, detalle) =>
+                      total + (detalle.cantidad * detalle.precio), 0
+                    )
+                  )}
+                </span>
               </div>
             </div>
           </div>

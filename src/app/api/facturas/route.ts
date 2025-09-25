@@ -39,22 +39,22 @@ export async function GET(request: NextRequest) {
 
     // Filtros de fecha
     if (fechaDesde || fechaHasta) {
-      const fechaEmision: Prisma.DateTimeFilter = {};
+      const fechaCreacion: Prisma.DateTimeFilter = {};
 
       if (fechaDesde) {
         const fechaInicio = new Date(fechaDesde + 'T00:00:00.000');
         const offsetMinutes = fechaInicio.getTimezoneOffset();
         fechaInicio.setMinutes(fechaInicio.getMinutes() - offsetMinutes);
-        fechaEmision.gte = fechaInicio;
+        fechaCreacion.gte = fechaInicio;
       }
       if (fechaHasta) {
         const fechaFin = new Date(fechaHasta + 'T23:59:59.999');
         const offsetMinutes = fechaFin.getTimezoneOffset();
         fechaFin.setMinutes(fechaFin.getMinutes() - offsetMinutes);
-        fechaEmision.lte = fechaFin;
+        fechaCreacion.lte = fechaFin;
       }
 
-      whereConditions.fecha_emision = fechaEmision;
+      whereConditions.fecha_creacion = fechaCreacion;
     }
 
     // Filtro por estado
@@ -120,6 +120,8 @@ export async function GET(request: NextRequest) {
       orderBy.fecha_vencimiento = sortOrder as Prisma.SortOrder;
     } else if (sortField === 'numero_factura') {
       orderBy.numero_factura = sortOrder as Prisma.SortOrder;
+    } else if (sortField === 'fecha_carga') {
+      orderBy.fecha_creacion = sortOrder as Prisma.SortOrder;
     } else if (sortField === 'proveedor.nombre_proveedor') {
       orderBy.proveedor = { nombre_proveedor: sortOrder as Prisma.SortOrder };
     } else {
@@ -171,11 +173,9 @@ export async function GET(request: NextRequest) {
 
     // Formatear datos para el frontend
     const formattedData = facturas.map(factura => {
-      // Calcular costo total estimado basado en los detalles
+      // Calcular costo total basado en los detalles con precio real
       const costoTotal = factura.detalle_factura_proveedor.reduce((sum, detalle) => {
-        // En una implementación real, esto vendría de un campo precio_unitario en detalle_factura_proveedor
-        // Por ahora usamos un valor estimado de $1000 por unidad
-        return sum + (detalle.cantidad * 1000);
+        return sum + (detalle.cantidad * Number(detalle.precio));
       }, 0);
 
       return {
@@ -200,6 +200,7 @@ export async function GET(request: NextRequest) {
         detalles: factura.detalle_factura_proveedor.map(detalle => ({
           id_detalle_factura: detalle.id_detalle_factura,
           cantidad: detalle.cantidad,
+          precio: Number(detalle.precio),
           insumo: {
             id_insumo: detalle.insumo.id_insumo,
             nombre_insumo: detalle.insumo.nombre_insumo,

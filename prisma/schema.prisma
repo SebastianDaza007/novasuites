@@ -35,13 +35,12 @@ model insumo {
 model proveedor {
   id_proveedor         Int                 @id @default(autoincrement())
   nombre_proveedor     String
-  cuit_proveedor       Decimal             @unique @db.Decimal(11, 0)
+  cuit_proveedor       String              @unique
   direccion_proveedor  String
   telefono_proveedor   Int?
   correo_proveedor     String?
   nombre_responsable   String?
   contacto_responsable Int?
-  condiciones_pago     String?
   activo               Boolean             @default(true)
   observaciones        String?
   fecha_creacion       DateTime?           @default(now()) @db.Timestamp(6)
@@ -106,7 +105,6 @@ model movimiento_inventario {
 model detalle_movimiento_inventario {
   id_detalle        Int                   @id @default(autoincrement())
   cantidad          Int
-  costo_unitario    Decimal?              @db.Decimal(10, 2)
   lote              String?
   fecha_vencimiento DateTime?             @db.Timestamp(6)
   id_movimiento     Int
@@ -118,11 +116,10 @@ model detalle_movimiento_inventario {
 model orden_compra {
   id_orden_compra        Int                     @id @default(autoincrement())
   numero_orden           String                  @unique
-  fecha_orden            DateTime?               @default(now()) @db.Timestamp(6)
-  fecha_entrega_estimada DateTime?               @db.Timestamp(6)
+  fecha_orden            DateTime                @default(now()) @db.Timestamp(6)
+  fecha_entrega_estimada DateTime                @db.Timestamp(6)
   estado_orden           estados_orden           @default(PENDIENTE)
   observaciones          String?
-  fecha_creacion         DateTime?               @default(now()) @db.Timestamp(6)
   fecha_actualizacion    DateTime?               @updatedAt @db.Timestamp(6)
   id_proveedor           Int
   id_usuario_solicita    Int
@@ -164,6 +161,7 @@ model detalle_factura_proveedor {
   cantidad           Int
   id_factura         Int
   id_insumo          Int
+  precio             Decimal           @default(0.00) @db.Decimal(10, 2)
   factura_proveedor  factura_proveedor @relation(fields: [id_factura], references: [id_factura], onDelete: NoAction, onUpdate: NoAction)
   insumo             insumo            @relation(fields: [id_insumo], references: [id_insumo], onDelete: NoAction, onUpdate: NoAction)
 }

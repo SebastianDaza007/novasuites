@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { DataTableStateEvent } from 'primereact/datatable';
 import {
   FacturaDetalle,
   FacturasFiltros,
@@ -33,6 +34,7 @@ const initialLazyState: LazyState = {
 export const useFacturas = () => {
   // Estado de datos
   const [facturas, setFacturas] = useState<FacturaDetalle[]>([]);
+  const [todasLasFacturas, setTodasLasFacturas] = useState<FacturaDetalle[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [estadosFactura, setEstadosFactura] = useState<EstadoFactura[]>([]);
   const [tiposFactura, setTiposFactura] = useState<TipoFactura[]>([]);
@@ -113,6 +115,24 @@ export const useFacturas = () => {
     }
   }, [buildQueryParams]);
 
+  // Función para cargar todas las facturas sin filtros (para cálculos de totales)
+  const fetchTodasLasFacturas = useCallback(async () => {
+    try {
+      const response = await fetch('/api/facturas?page=1&limit=999999');
+      const result: ApiResponse<FacturaDetalle[]> = await response.json();
+
+      if (result.success) {
+        setTodasLasFacturas(result.data);
+      } else {
+        console.error('Error fetching todas las facturas:', result.message);
+        setTodasLasFacturas([]);
+      }
+    } catch (error) {
+      console.error('Error fetching todas las facturas:', error);
+      setTodasLasFacturas([]);
+    }
+  }, []);
+
   // Función para cargar datos de filtros
   const fetchFilterData = useCallback(async () => {
     try {
@@ -189,11 +209,11 @@ export const useFacturas = () => {
   }, []);
 
   // Función para manejar ordenamiento
-  const onSort = useCallback((event: any) => {
+  const onSort = useCallback((event: DataTableStateEvent) => {
     setLazyState(prev => ({
       ...prev,
-      sortField: event.sortField,
-      sortOrder: event.sortOrder,
+      sortField: event.sortField || undefined,
+      sortOrder: event.sortOrder || undefined,
       first: 0,
       page: 0
     }));
@@ -202,7 +222,8 @@ export const useFacturas = () => {
   // Efectos
   useEffect(() => {
     fetchFilterData();
-  }, [fetchFilterData]);
+    fetchTodasLasFacturas();
+  }, [fetchFilterData, fetchTodasLasFacturas]);
 
   useEffect(() => {
     fetchFacturas();
@@ -211,6 +232,7 @@ export const useFacturas = () => {
   return {
     // Estado de datos
     facturas,
+    todasLasFacturas,
     proveedores,
     estadosFactura,
     tiposFactura,

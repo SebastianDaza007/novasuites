@@ -25,7 +25,9 @@ const FacturasPage = () => {
   const {
     // Estado de datos
     facturas,
+    todasLasFacturas,
     proveedores,
+    estadosFactura,
     tiposFactura,
     numerosFactura,
     ordenesCompra,
@@ -51,21 +53,23 @@ const FacturasPage = () => {
     }).format(amount);
   };
 
-  // Calcular datos de resumen basados en las facturas cargadas
+  // Calcular datos de resumen basados en todas las facturas (sin filtros)
   useEffect(() => {
-    if (facturas.length > 0) {
+    if (todasLasFacturas.length > 0) {
       const ahora = new Date();
       let totalPendiente = 0;
       let totalPagado = 0;
       let totalVencido = 0;
       const saldoPorProveedor: Record<string, { pendiente: number; pagado: number }> = {};
 
-      facturas.forEach(factura => {
+      todasLasFacturas.forEach(factura => {
         const fechaVencimiento = new Date(factura.fecha_vencimiento);
-        const esVencida = fechaVencimiento < ahora;
+        const esVencida = fechaVencimiento < ahora && factura.estado_factura === 'PENDIENTE';
 
-        // Simulamos un monto total por factura basado en los detalles (en una implementación real esto vendría de la base de datos)
-        const montoEstimado = factura.detalles.reduce((sum, detalle) => sum + (detalle.cantidad * 1000), 0); // $1000 por unidad como ejemplo
+        // Calcular monto real basado en los detalles con precios reales
+        const montoReal = factura.detalles.reduce((sum, detalle) =>
+          sum + (detalle.cantidad * detalle.precio), 0
+        );
 
         const nombreProveedor = factura.proveedor.nombre_proveedor;
 
@@ -75,19 +79,22 @@ const FacturasPage = () => {
 
         switch (factura.estado_factura) {
           case 'PENDIENTE':
-            totalPendiente += montoEstimado;
-            saldoPorProveedor[nombreProveedor].pendiente += montoEstimado;
+            totalPendiente += montoReal;
+            saldoPorProveedor[nombreProveedor].pendiente += montoReal;
             if (esVencida) {
-              totalVencido += montoEstimado;
+              totalVencido += montoReal;
             }
             break;
           case 'PAGADA':
-            totalPagado += montoEstimado;
-            saldoPorProveedor[nombreProveedor].pagado += montoEstimado;
+            totalPagado += montoReal;
+            saldoPorProveedor[nombreProveedor].pagado += montoReal;
             break;
           case 'VENCIDA':
-            totalVencido += montoEstimado;
-            saldoPorProveedor[nombreProveedor].pendiente += montoEstimado;
+            totalVencido += montoReal;
+            saldoPorProveedor[nombreProveedor].pendiente += montoReal;
+            break;
+          case 'ANULADA':
+            // Las facturas anuladas no se cuentan en los totales
             break;
         }
       });
@@ -99,7 +106,7 @@ const FacturasPage = () => {
         saldoPorProveedor
       });
     }
-  }, [facturas]);
+  }, [todasLasFacturas]);
 
   const handleExportar = useCallback(() => {
     toast.current?.show({
@@ -197,6 +204,7 @@ const FacturasPage = () => {
         <FacturasFilters
           filtros={filtros}
           proveedores={proveedores}
+          estadosFactura={estadosFactura}
           tiposFactura={tiposFactura}
           numerosFactura={numerosFactura}
           ordenesCompra={ordenesCompra}
