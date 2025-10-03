@@ -27,6 +27,8 @@ type MovimientoFormProps = {
   setIdRazon: (id: number | null) => void;
   observaciones: string;
   setObservaciones: (v: string) => void;
+  ordenCompra: string;                    // 👈 nuevo
+  setOrdenCompra: (v: string) => void;    // 👈 nuevo
 };
 
 export default function MovimientoForm({
@@ -37,6 +39,8 @@ export default function MovimientoForm({
   setIdRazon,
   observaciones,
   setObservaciones,
+  ordenCompra,
+  setOrdenCompra,
 }: MovimientoFormProps) {
   const [idInsumo, setIdInsumo] = useState<number | null>(null);
 
@@ -127,9 +131,9 @@ export default function MovimientoForm({
 
   return (
     <div className="p-4 border rounded-lg shadow-sm space-y-6">
-      {/* Globales: Depósito + Razón + Observaciones */}
+      {/* Globales: Depósito + Razón + Orden Compra + Observaciones */}
       <div className="space-y-4 pb-6 border-b">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Dropdown
             id="deposito"
             value={idDeposito}
@@ -145,6 +149,13 @@ export default function MovimientoForm({
             onChange={(e) => setIdRazon(e.value)}
             className="w-full"
             placeholder="Razón de movimiento"
+          />
+          <InputText
+            id="ordenCompra"
+            value={ordenCompra}
+            onChange={(e) => setOrdenCompra(e.target.value)}
+            className="w-full"
+            placeholder="Orden de compra (opcional)"
           />
         </div>
         <InputTextarea
