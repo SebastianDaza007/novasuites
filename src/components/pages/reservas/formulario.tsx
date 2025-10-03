@@ -36,6 +36,27 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, onClear }) => {
   const [hasta, setHasta] = useState<Date | null>(null);
   const [estado, setEstado] = useState<"pendiente" | "confirmado" | "cancelado">("pendiente");
   const [formaPago, setFormaPago] = useState<string | null>("tarjeta");
+  
+  // Posición del deslizador para el control de "Estado"
+  const sliderPosition =
+    estado === "pendiente"
+      ? "translate-x-0"
+      : estado === "confirmado"
+      ? "translate-x-[100%]"
+      : "translate-x-[200%]";
+  // Color del deslizador según estado
+  const sliderBg =
+    estado === "pendiente"
+      ? "bg-blue-600"
+      : estado === "confirmado"
+      ? "bg-emerald-600"
+      : "bg-rose-600";
+  const sliderRing =
+    estado === "pendiente"
+      ? "ring-blue-500/30"
+      : estado === "confirmado"
+      ? "ring-emerald-500/30"
+      : "ring-rose-500/30";
 
   const clear = () => {
     setTitular("");
@@ -136,10 +157,40 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, onClear }) => {
         {/* Estado */}
         <div className="flex flex-col gap-1">
           <label className="text-sm text-gray-600 mb-1">Estado</label>
-          <div className="flex rounded-lg overflow-hidden border border-gray-200 w-full">
-            <button type="button" onClick={() => setEstado("pendiente")} className={`flex-1 px-3 py-2 text-sm font-medium ${estado === "pendiente" ? "bg-blue-600 text-white" : "bg-white text-gray-700"}`}>Pendiente</button>
-            <button type="button" onClick={() => setEstado("confirmado")} className={`flex-1 px-3 py-2 text-sm font-medium border-l ${estado === "confirmado" ? "bg-blue-600 text-white" : "bg-white text-gray-700"}`}>Confirmado</button>
-            <button type="button" onClick={() => setEstado("cancelado")} className={`flex-1 px-3 py-2 text-sm font-medium border-l ${estado === "cancelado" ? "bg-blue-600 text-white" : "bg-white text-gray-700"}`}>Cancelado</button>
+          <div className="relative w-full" role="tablist" aria-label="Estado de la reserva">
+            <div className="relative grid grid-cols-3 border border-gray-200 bg-white w-full shadow-sm divide-x divide-gray-200">
+              <span
+                aria-hidden
+                className={`absolute top-0 left-0 h-full w-1/3 shadow ring-1 transition-transform duration-300 ease-out will-change-transform ${sliderPosition} ${sliderBg} ${sliderRing}`}
+              />
+              <button
+                type="button"
+                role="tab"
+                aria-selected={estado === "pendiente"}
+                onClick={() => setEstado("pendiente")}
+                className={`relative z-10 px-4 py-2.5 text-sm font-semibold text-center transition-colors ${estado === "pendiente" ? "text-white" : "text-slate-700 hover:text-slate-900"}`}
+              >
+                Pendiente
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={estado === "confirmado"}
+                onClick={() => setEstado("confirmado")}
+                className={`relative z-10 px-4 py-2.5 text-sm font-semibold text-center transition-colors ${estado === "confirmado" ? "text-white" : "text-slate-700 hover:text-slate-900"}`}
+              >
+                Confirmado
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={estado === "cancelado"}
+                onClick={() => setEstado("cancelado")}
+                className={`relative z-10 px-4 py-2.5 text-sm font-semibold text-center transition-colors ${estado === "cancelado" ? "text-white" : "text-slate-700 hover:text-slate-900"}`}
+              >
+                Cancelado
+              </button>
+            </div>
           </div>
         </div>
 
@@ -154,3 +205,4 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, onClear }) => {
 };
 
 export default GuestForm;
+

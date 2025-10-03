@@ -1,3 +1,4 @@
+
 export const dynamic = "force-dynamic";    // 👈 desactiva cache de ruta
 export const revalidate = 0;
 
@@ -105,4 +106,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e?.message ?? "Error creando" }, { status: 400 });
   }
 }
-
