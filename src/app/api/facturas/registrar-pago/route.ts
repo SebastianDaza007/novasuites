@@ -1,38 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-/**
- * NOTA IMPORTANTE PARA EL DBA:
- *
- * Este endpoint requiere las siguientes modificaciones en la base de datos:
- *
- * 1. Agregar campos a la tabla factura_proveedor:
- *    - fecha_pago: DateTime? @db.Timestamp(6)
- *    - metodo_pago: String?
- *    - monto_pagado: Decimal? @db.Decimal(10,2)
- *
- * 2. Crear nueva tabla nota_credito_debito:
- *    - id_nota: Int @id @default(autoincrement())
- *    - numero_nota: String @unique
- *    - tipo_nota: Enum('CREDITO', 'DEBITO')
- *    - fecha_emision: DateTime @db.Timestamp(6)
- *    - monto: Decimal @db.Decimal(10,2)
- *    - motivo: String
- *    - observaciones: String?
- *    - id_factura: Int (FK a factura_proveedor)
- *    - id_usuario: Int? (FK a user - quien generó la nota)
- *    - fecha_creacion: DateTime @default(now())
- *
- * 3. Crear enum tipo_nota:
- *    enum tipo_nota {
- *      CREDITO
- *      DEBITO
- *    }
- *
- * Una vez realizados estos cambios, descomentar las líneas marcadas con "DESCOMENTAR"
- * y comentar/eliminar el código TEMPORAL.
- */
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -82,98 +50,104 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TEMPORAL: Solo actualiza el estado hasta que se agreguen los campos necesarios
-    const facturaActualizada = await prisma.factura_proveedor.update({
-      where: { id_factura: Number(id_factura) },
-      data: {
-        estado_factura: 'PAGADA'
-      }
-    });
-
-    // Si hay nota, loguear la información (temporal hasta que exista la tabla)
-    if (nota) {
-      console.log('===== NOTA DE CRÉDITO/DÉBITO =====');
-      console.log('Tipo:', nota.tipo);
-      console.log('Monto:', nota.monto);
-      console.log('Motivo:', nota.motivo);
-      console.log('Factura asociada:', factura.numero_factura);
-      console.log('Fecha:', new Date().toISOString());
-      console.log('==================================');
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: nota
-        ? `Pago registrado exitosamente con Nota de ${nota.tipo === 'CREDITO' ? 'Crédito' : 'Débito'}`
-        : 'Pago registrado exitosamente',
-      data: {
-        factura: facturaActualizada,
-        nota: nota ? {
-          tipo: nota.tipo,
-          monto: nota.monto,
-          motivo: nota.motivo,
-          mensaje: 'Nota registrada en consola (pendiente creación de tabla en BD)'
-        } : null
-      }
-    });
-
-    /* DESCOMENTAR cuando se agreguen los campos y tabla en la BD:
-
     // Usar transacción para asegurar atomicidad
     const resultado = await prisma.$transaction(async (tx) => {
-      // Actualizar factura con datos de pago
+      // 1. Crear la orden de pago
+      const ordenPago = await tx.ordenes_pago.create({
+        data: {
+          fecha: new Date(fecha_pago),
+          total: monto_pagado
+        }
+      });
+
+      // 2. Actualizar la factura vinculándola a la orden de pago y cambiando su estado
       const facturaActualizada = await tx.factura_proveedor.update({
         where: { id_factura: Number(id_factura) },
         data: {
           estado_factura: 'PAGADA',
-          fecha_pago: new Date(fecha_pago),
-          metodo_pago: metodo_pago,
-          monto_pagado: monto_pagado
+          id_orden_pago: ordenPago.id_ordenes_pago
         }
       });
 
       let notaCreada = null;
 
-      // Si hay diferencia, crear nota de crédito/débito
+      // 3. Si hay diferencia, crear nota de crédito/débito
       if (nota) {
         // Generar número de nota correlativo
-        const ultimaNota = await tx.nota_credito_debito.findFirst({
-          where: { tipo_nota: nota.tipo },
-          orderBy: { id_nota: 'desc' }
-        });
+        const prefijo = nota.tipo === 'CREDITO' ? 'NC' : 'ND';
+
+        // Buscar la última nota del tipo correspondiente
+        let ultimaNota;
+        if (nota.tipo === 'CREDITO') {
+          ultimaNota = await tx.notas_credito.findFirst({
+            orderBy: { id_notas_credito: 'desc' }
+          });
+        } else {
+          ultimaNota = await tx.notas_debito.findFirst({
+            orderBy: { id_notas_debito: 'desc' }
+          });
+        }
 
         const siguienteNumero = ultimaNota
-          ? parseInt(ultimaNota.numero_nota.split('-')[1]) + 1
+          ? parseInt(ultimaNota.numero.split('-')[1]) + 1
           : 1;
 
-        const numeroNota = `${nota.tipo === 'CREDITO' ? 'NC' : 'ND'}-${siguienteNumero.toString().padStart(8, '0')}`;
+        const numeroNota = `${prefijo}-${siguienteNumero.toString().padStart(8, '0')}`;
 
         // Crear la nota
-        notaCreada = await tx.nota_credito_debito.create({
-          data: {
-            numero_nota: numeroNota,
-            tipo_nota: nota.tipo,
-            fecha_emision: new Date(fecha_pago),
-            monto: nota.monto,
-            motivo: nota.motivo,
-            observaciones: nota.observaciones || null,
-            id_factura: Number(id_factura),
-            // id_usuario: obtener del contexto de sesión
-          }
-        });
+        if (nota.tipo === 'CREDITO') {
+          notaCreada = await tx.notas_credito.create({
+            data: {
+              numero: numeroNota,
+              id_factura: Number(id_factura),
+              fecha_emision: new Date(fecha_pago),
+              monto: nota.monto,
+              motivo: nota.motivo
+            }
+          });
+
+          // Vincular la nota a la orden de pago
+          await tx.detalle_orden_pago.create({
+            data: {
+              id_orden_pago: ordenPago.id_ordenes_pago,
+              id_nota_credito: notaCreada.id_notas_credito
+            }
+          });
+        } else {
+          notaCreada = await tx.notas_debito.create({
+            data: {
+              numero: numeroNota,
+              id_factura: Number(id_factura),
+              fecha_emision: new Date(fecha_pago),
+              monto: nota.monto,
+              motivo: nota.motivo
+            }
+          });
+
+          // Vincular la nota a la orden de pago
+          await tx.detalle_orden_pago.create({
+            data: {
+              id_orden_pago: ordenPago.id_ordenes_pago,
+              id_nota_debito: notaCreada.id_notas_debito
+            }
+          });
+        }
       }
 
-      return { factura: facturaActualizada, nota: notaCreada };
+      return {
+        factura: facturaActualizada,
+        ordenPago,
+        nota: notaCreada ? { ...notaCreada, tipo: nota.tipo } : null
+      };
     });
 
     return NextResponse.json({
       success: true,
       message: resultado.nota
-        ? `Pago registrado exitosamente. Nota de ${resultado.nota.tipo_nota === 'CREDITO' ? 'Crédito' : 'Débito'} Nro ${resultado.nota.numero_nota} generada.`
+        ? `Pago registrado exitosamente. Nota de ${resultado.nota.tipo === 'CREDITO' ? 'Crédito' : 'Débito'} Nro ${resultado.nota.numero} generada.`
         : 'Pago registrado exitosamente',
       data: resultado
     });
-    */
 
   } catch (error) {
     console.error('Error al registrar el pago:', error);
