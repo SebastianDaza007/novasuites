@@ -153,9 +153,19 @@ model factura_proveedor {
   fecha_actualizacion       DateTime?                   @updatedAt @db.Timestamp(6)
   id_proveedor              Int
   id_orden_compra           Int?
+
+  // 🔹 NUEVO: ahora cada factura puede vincularse directamente a una orden de pago
+  id_orden_pago             Int?
+
   detalle_factura_proveedor detalle_factura_proveedor[]
+  notas_credito notas_credito[]
+  notas_debito  notas_debito[]
   orden_compra              orden_compra?               @relation(fields: [id_orden_compra], references: [id_orden_compra], onDelete: NoAction, onUpdate: NoAction)
   proveedor                 proveedor                   @relation(fields: [id_proveedor], references: [id_proveedor], onDelete: NoAction, onUpdate: NoAction)
+
+// 🔹 NUEVA RELACION: factura_proveedor -> ordenes_pago
+  orden_pago ordenes_pago? @relation(fields: [id_orden_pago], references: [id_ordenes_pago], onDelete: NoAction, onUpdate: NoAction)
+
 }
 
 model detalle_factura_proveedor {
@@ -193,6 +203,7 @@ model usuario {
   deposito               deposito[]
   movimientos_inventario movimiento_inventario[]
   ordenes_compra         orden_compra[]
+  housekeeping           housekeeping[]
   rol                    rol                     @relation(fields: [id_rol], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -222,4 +233,171 @@ enum tipos_movimiento {
   TRANSFERENCIA_SALIDA
   TRANSFERENCIA_ENTRADA
   AJUSTE
+}
+
+// 🔹 Huespedes
+model huespedes {
+  id_huespedes Int    @id @default(autoincrement())
+  nombre      String
+  apellido    String
+  documento   String
+  telefono    String?
+  email       String?
+
+  reservas    reservas[]
+}
+
+// 🔹 Habitaciones
+model habitaciones {
+  id_habitaciones Int    @id @default(autoincrement())
+  numero          String @unique
+  tipo            tipo_habitacion
+  capacidad       Int
+  precio_base     Decimal @db.Decimal(12,2)
+  estado          estado_habitacion
+
+  reservas_habitaciones reservas_habitaciones[]
+  housekeeping          housekeeping[]
+}
+
+// 🔹 Reservas
+model reservas {
+  id_reservas      Int       @id @default(autoincrement())
+  id_huesped       Int
+  fecha_checkin    DateTime  @db.Date
+  fecha_checkout   DateTime  @db.Date
+  cantidad_personas Int
+  estado           estado_reservacion
+  monto_total      Decimal   @db.Decimal(12,2)
+  creado_en        DateTime? @default(now())
+  actualizado_en   DateTime?
+
+  huesped          huespedes             @relation(fields: [id_huesped], references: [id_huespedes])
+  reservas_habitaciones reservas_habitaciones[]
+  facturas_ventas  facturas_ventas[]
+}
+
+// 🔹 Reservas_Habitaciones (intermedia para N:N)
+model reservas_habitaciones {
+  id_reservas_habitaciones Int @id @default(autoincrement())
+  id_reserva               Int
+  id_habitacion            Int
+  cantidad_personas        Int
+
+  reserva    reservas    @relation(fields: [id_reserva], references: [id_reservas])
+  habitacion habitaciones @relation(fields: [id_habitacion], references: [id_habitaciones])
+
+  @@unique([id_reserva, id_habitacion])
+}
+
+// 🔹 Housekeeping
+model housekeeping {
+  id_housekeeping Int      @id @default(autoincrement())
+  id_habitacion   Int
+  fecha           DateTime @db.Date
+  tarea           String
+  estado          String
+  observaciones   String?
+  asignado_a      Int
+  creado_en       DateTime? @default(now())
+
+  habitacion habitaciones @relation(fields: [id_habitacion], references: [id_habitaciones])
+  usuario     usuario     @relation(fields: [asignado_a], references: [id])
+}
+
+// 🔹 Facturas de ventas (clientes)
+model facturas_ventas {
+  id_facturas_ventas Int     @id @default(autoincrement())
+  numero            String   @unique
+  id_reserva        Int
+  fecha_emision     DateTime @db.Date
+  fecha_vencimiento DateTime @db.Date
+  monto_total       Decimal  @db.Decimal(12,2)
+  estado            estados_factura
+  creado_en         DateTime? @default(now())
+  actualizado_en    DateTime?
+
+  reserva reservas          @relation(fields: [id_reserva], references: [id_reservas])
+  detalles detalle_facturas_ventas[]
+}
+
+model detalle_facturas_ventas {
+  id_detalle_facturas_ventas Int      @id @default(autoincrement())
+  id_factura          Int
+  descripcion         String
+  cantidad            Decimal   @db.Decimal(10,2)
+  precio_unitario     Decimal   @db.Decimal(12,2)
+
+  factura facturas_ventas @relation(fields: [id_factura], references: [id_facturas_ventas])
+}
+
+// 🔹 Notas de crédito
+model notas_credito {
+  id_notas_credito Int    @id @default(autoincrement())
+  numero           String @unique
+  id_factura       Int
+  fecha_emision    DateTime @db.Date
+  monto            Decimal @db.Decimal(12,2)
+  motivo           String?
+
+  factura factura_proveedor @relation(fields: [id_factura], references: [id_factura])
+  detalles detalle_orden_pago[]
+}
+
+// 🔹 Notas de débito
+model notas_debito {
+  id_notas_debito Int    @id @default(autoincrement())
+  numero          String @unique
+  id_factura      Int
+  fecha_emision   DateTime @db.Date
+  monto           Decimal @db.Decimal(12,2)
+  motivo          String?
+
+  factura factura_proveedor @relation(fields: [id_factura], references: [id_factura])
+  detalles detalle_orden_pago[]
+}
+
+// 🔹 Ordenes de pago
+model ordenes_pago {
+  id_ordenes_pago Int      @id @default(autoincrement())
+  fecha           DateTime @db.Date
+  total           Decimal  @db.Decimal(12,2)
+
+  facturas factura_proveedor[]
+  detalles detalle_orden_pago[]
+}
+
+// 🔹 Detalle orden de pago
+model detalle_orden_pago {
+  id_detalles_orden_pago Int @id @default(autoincrement())
+  id_orden_pago          Int
+  id_nota_credito        Int?
+  id_nota_debito         Int?
+
+  orden_pago ordenes_pago @relation(fields: [id_orden_pago], references: [id_ordenes_pago])
+  nota_credito notas_credito? @relation(fields: [id_nota_credito], references: [id_notas_credito])
+  nota_debito  notas_debito?  @relation(fields: [id_nota_debito], references: [id_notas_debito])
+}
+
+// ============================================
+// ENUMS NUEVOS
+// ============================================
+enum tipo_habitacion {
+  single
+  doble
+  suite
+}
+
+enum estado_habitacion {
+  DISPONIBLE
+  OCUPADA
+  LIMPIEZA
+  MANTENIMIENTO
+}
+
+enum estado_reservacion {
+  RESERVADA
+  CHECKIN
+  CHECKOUT
+  CANCELADA
 }
