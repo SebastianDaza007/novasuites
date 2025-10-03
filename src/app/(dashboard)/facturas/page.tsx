@@ -224,6 +224,7 @@ const FacturasPage = () => {
           lazyState={lazyState}
           onPage={onPage}
           onSort={onSort}
+          onPagoRegistrado={fetchFacturas}
         />
       </div>
 

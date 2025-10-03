@@ -6,6 +6,7 @@ import { Badge } from 'primereact/badge';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { FacturaDetalle, LazyState } from '@/types/facturas';
+import RegistrarPagoDialog from './RegistrarPagoDialog';
 
 interface FacturasTableProps {
   facturas: FacturaDetalle[];
@@ -14,6 +15,7 @@ interface FacturasTableProps {
   lazyState: LazyState;
   onPage: (event: { first: number; rows: number }) => void;
   onSort?: (event: DataTableStateEvent) => void;
+  onPagoRegistrado?: () => void;
 }
 
 const FacturasTable: React.FC<FacturasTableProps> = ({
@@ -22,10 +24,13 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
   totalRecords,
   lazyState,
   onPage,
-  onSort
+  onSort,
+  onPagoRegistrado
 }) => {
   const [selectedFactura, setSelectedFactura] = useState<FacturaDetalle | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showPagoDialog, setShowPagoDialog] = useState(false);
+  const [facturaParaPago, setFacturaParaPago] = useState<FacturaDetalle | null>(null);
 
   const formatDateTime = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -147,8 +152,8 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
     };
 
     const handlePagos = () => {
-      // Funcionalidad futura para gestionar pagos
-      console.log('Abrir modal de pagos para factura:', rowData.id_factura);
+      setFacturaParaPago(rowData);
+      setShowPagoDialog(true);
     };
 
     return (
@@ -273,6 +278,17 @@ const FacturasTable: React.FC<FacturasTableProps> = ({
           bodyStyle={{ textAlign: 'center' }}
         />
       </DataTable>
+
+      {/* Modal de registro de pago */}
+      <RegistrarPagoDialog
+        visible={showPagoDialog}
+        factura={facturaParaPago}
+        onHide={() => {
+          setShowPagoDialog(false);
+          setFacturaParaPago(null);
+        }}
+        onPagoRegistrado={onPagoRegistrado}
+      />
 
       {/* Modal de detalles */}
       <Dialog
