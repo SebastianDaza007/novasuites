@@ -29,8 +29,8 @@ body {
 }
 /* Ajusta el espacio para inputs con icono a la izquierda */
 .p-input-icon-left > i {
-  margin-left: 0.5rem; /* 👈 separa el ícono del borde */
+  margin-left: 0.5rem; /* separa el ícono del borde */
 }
 .p-input-icon-left > .p-inputtext {
-  padding-left: 2.5rem; /* 👈 deja espacio para que el texto no se pegue al icono */
+  padding-left: 2.5rem; /* deja espacio para que el texto no se pegue al icono */
 }
