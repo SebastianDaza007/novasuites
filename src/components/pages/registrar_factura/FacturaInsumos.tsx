@@ -7,6 +7,11 @@ import { Button } from "primereact/button";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 
+interface InsumoApi {
+  id_insumo: number;
+  nombre_insumo: string;
+}
+
 type InsumoDetalle = {
   id_insumo: number;
   nombre: string;
@@ -30,8 +35,8 @@ export default function FacturaInsumos({ insumos, setInsumos }: FacturaInsumosPr
   useEffect(() => {
     fetch("/api/registrar_factura/insumos")
       .then((res) => res.json())
-      .then((data) =>
-        setInsumosOptions(data.map((i: any) => ({ label: i.nombre_insumo, value: i.id_insumo })))
+      .then((data: InsumoApi[]) =>
+        setInsumosOptions(data.map((i) => ({ label: i.nombre_insumo, value: i.id_insumo })))
       )
       .catch((err) => console.error("Error al cargar insumos:", err));
   }, []);

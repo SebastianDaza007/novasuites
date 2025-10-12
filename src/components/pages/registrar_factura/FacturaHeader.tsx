@@ -6,6 +6,16 @@ import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
 import { Button } from "primereact/button";
 
+interface Proveedor {
+  nombre_proveedor: string;
+  id_proveedor: number;
+}
+
+interface OrdenCompra {
+  numero_orden: string;
+  id_orden_compra: number;
+}
+
 interface FacturaHeaderProps {
   proveedor: number | null;
   setProveedor: (val: number | null) => void;
@@ -46,9 +56,9 @@ export default function FacturaHeader({
   useEffect(() => {
     fetch("/api/registrar_factura/proveedores")
       .then((res) => res.json())
-      .then((data) =>
+      .then((data: Proveedor[]) =>
         setProveedores(
-          data.map((p: any) => ({ label: p.nombre_proveedor, value: p.id_proveedor }))
+          data.map((p) => ({ label: p.nombre_proveedor, value: p.id_proveedor }))
         )
       )
       .catch((err) => console.error("Error al cargar proveedores:", err));
@@ -59,9 +69,9 @@ export default function FacturaHeader({
     if (proveedor) {
       fetch(`/api/registrar_factura/ordenes?proveedor=${proveedor}`)
         .then((res) => res.json())
-        .then((data) =>
+        .then((data: OrdenCompra[]) =>
           setOrdenes(
-            data.map((o: any) => ({ label: o.numero_orden, value: o.id_orden_compra }))
+            data.map((o) => ({ label: o.numero_orden, value: o.id_orden_compra }))
           )
         )
         .catch((err) => console.error("Error al cargar órdenes:", err));
