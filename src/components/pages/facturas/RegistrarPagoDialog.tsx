@@ -28,11 +28,11 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Estados para nota de crédito/débito
-  const [showNotaDialog, setShowNotaDialog] = useState(false);
-  const [tipoNota, setTipoNota] = useState<'CREDITO' | 'DEBITO' | null>(null);
-  const [motivoNota, setMotivoNota] = useState<string>('');
-  const [diferencia, setDiferencia] = useState<number>(0);
+  // Estados para nota de crédito/débito - DESHABILITADO
+  // const [showNotaDialog, setShowNotaDialog] = useState(false);
+  // const [tipoNota, setTipoNota] = useState<'CREDITO' | 'DEBITO' | null>(null);
+  // const [motivoNota, setMotivoNota] = useState<string>('');
+  // const [diferencia, setDiferencia] = useState<number>(0);
 
   const fileUploadRef = useRef<FileUpload>(null);
 
@@ -67,22 +67,22 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
     }
   }, [factura, visible]);
 
-  // Calcular diferencia cuando cambia el monto a pagar
-  useEffect(() => {
-    if (factura && montoPagar !== null) {
-      const diff = montoPagar - factura.costo_total;
-      setDiferencia(diff);
+  // Calcular diferencia cuando cambia el monto a pagar - DESHABILITADO
+  // useEffect(() => {
+  //   if (factura && montoPagar !== null) {
+  //     const diff = montoPagar - factura.costo_total;
+  //     setDiferencia(diff);
 
-      // Determinar tipo de nota si hay diferencia
-      if (diff < 0) {
-        setTipoNota('CREDITO');
-      } else if (diff > 0) {
-        setTipoNota('DEBITO');
-      } else {
-        setTipoNota(null);
-      }
-    }
-  }, [montoPagar, factura]);
+  //     // Determinar tipo de nota si hay diferencia
+  //     if (diff < 0) {
+  //       setTipoNota('CREDITO');
+  //     } else if (diff > 0) {
+  //       setTipoNota('DEBITO');
+  //     } else {
+  //       setTipoNota(null);
+  //     }
+  //   }
+  // }, [montoPagar, factura]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -112,13 +112,16 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
   };
 
   const handleContinuarPago = () => {
-    // Si hay diferencia, mostrar el diálogo de nota
-    if (diferencia !== 0) {
-      setShowNotaDialog(true);
-    } else {
-      // Si no hay diferencia, procesar pago directamente
-      handleRegistrarPago();
-    }
+    // DESHABILITADO: Si hay diferencia, mostrar el diálogo de nota
+    // if (diferencia !== 0) {
+    //   setShowNotaDialog(true);
+    // } else {
+    //   // Si no hay diferencia, procesar pago directamente
+    //   handleRegistrarPago();
+    // }
+
+    // Procesar pago directamente
+    handleRegistrarPago();
   };
 
   const handleRegistrarPago = async () => {
@@ -132,11 +135,11 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
         metodo_pago: string;
         fecha_pago: string;
         monto_pagado: number;
-        nota?: {
-          tipo: 'CREDITO' | 'DEBITO';
-          monto: number;
-          motivo: string;
-        };
+        // nota?: {
+        //   tipo: 'CREDITO' | 'DEBITO';
+        //   monto: number;
+        //   motivo: string;
+        // };
       } = {
         id_factura: factura.id_factura,
         metodo_pago: metodoPago,
@@ -144,14 +147,14 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
         monto_pagado: montoPagar
       };
 
-      // Si hay diferencia, incluir datos de la nota
-      if (diferencia !== 0 && tipoNota && motivoNota) {
-        requestBody.nota = {
-          tipo: tipoNota,
-          monto: Math.abs(diferencia),
-          motivo: motivoNota
-        };
-      }
+      // DESHABILITADO: Si hay diferencia, incluir datos de la nota
+      // if (diferencia !== 0 && tipoNota && motivoNota) {
+      //   requestBody.nota = {
+      //     tipo: tipoNota,
+      //     monto: Math.abs(diferencia),
+      //     motivo: motivoNota
+      //   };
+      // }
 
       const response = await fetch('/api/facturas/registrar-pago', {
         method: 'POST',
@@ -185,10 +188,10 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
     setFechaPago(null);
     setMontoPagar(null);
     setUploadedFile(null);
-    setShowNotaDialog(false);
-    setMotivoNota('');
-    setDiferencia(0);
-    setTipoNota(null);
+    // setShowNotaDialog(false);
+    // setMotivoNota('');
+    // setDiferencia(0);
+    // setTipoNota(null);
     if (fileUploadRef.current) {
       fileUploadRef.current.clear();
     }
@@ -235,7 +238,7 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
       <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
         <i className="pi pi-cloud-upload text-5xl text-gray-400 mb-3"></i>
         <p className="text-gray-600 mb-2">Arrastra y suelta archivos PDF aquí</p>
-        <small className="text-gray-500">o haz clic en "Subir" para seleccionar</small>
+        <small className="text-gray-500">o haz clic en &quot;Subir&quot; para seleccionar</small>
       </div>
     );
   };
@@ -250,8 +253,8 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
         disabled={loading}
       />
       <Button
-        label={diferencia !== 0 ? "Continuar" : "Registrar Pago"}
-        icon={diferencia !== 0 ? "pi pi-arrow-right" : "pi pi-check"}
+        label="Registrar Pago"
+        icon="pi pi-check"
         onClick={handleContinuarPago}
         disabled={!metodoPago || !fechaPago || montoPagar === null || montoPagar <= 0 || loading}
         loading={loading}
@@ -259,31 +262,32 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
     </div>
   );
 
-  const notaDialogFooter = (
-    <div className="flex justify-end gap-2">
-      <Button
-        label="Cancelar"
-        icon="pi pi-times"
-        onClick={() => setShowNotaDialog(false)}
-        className="p-button-outlined p-button-secondary"
-        disabled={loading}
-      />
-      <Button
-        label="Generar Nota y Registrar Pago"
-        icon="pi pi-check"
-        onClick={handleRegistrarPago}
-        disabled={!motivoNota || loading}
-        loading={loading}
-      />
-    </div>
-  );
+  // DESHABILITADO: Diálogo de nota de crédito/débito
+  // const notaDialogFooter = (
+  //   <div className="flex justify-end gap-2">
+  //     <Button
+  //       label="Cancelar"
+  //       icon="pi pi-times"
+  //       onClick={() => setShowNotaDialog(false)}
+  //       className="p-button-outlined p-button-secondary"
+  //       disabled={loading}
+  //     />
+  //     <Button
+  //       label="Generar Nota y Registrar Pago"
+  //       icon="pi pi-check"
+  //       onClick={handleRegistrarPago}
+  //       disabled={!motivoNota || loading}
+  //       loading={loading}
+  //     />
+  //   </div>
+  // );
 
   return (
     <>
       {/* Diálogo principal de registro de pago */}
       <Dialog
         header="Registrar Pago de Factura"
-        visible={visible && !showNotaDialog}
+        visible={visible}
         onHide={handleClose}
         style={{ width: '650px' }}
         modal
@@ -333,8 +337,8 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
                 min={0}
               />
 
-              {/* Mostrar diferencia si existe */}
-              {diferencia !== 0 && (
+              {/* DESHABILITADO: Mostrar diferencia si existe */}
+              {/* {diferencia !== 0 && (
                 <Message
                   severity={diferencia < 0 ? "warn" : "info"}
                   text={
@@ -344,7 +348,7 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
                   }
                   className="w-full"
                 />
-              )}
+              )} */}
             </div>
 
             {/* Método de pago */}
@@ -405,8 +409,8 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
         )}
       </Dialog>
 
-      {/* Diálogo de Nota de Crédito/Débito */}
-      <Dialog
+      {/* DESHABILITADO: Diálogo de Nota de Crédito/Débito */}
+      {/* <Dialog
         header={
           <div className="flex items-center gap-2">
             <i className={`pi ${tipoNota === 'CREDITO' ? 'pi-minus-circle text-orange-600' : 'pi-plus-circle text-blue-600'} text-xl`}></i>
@@ -423,7 +427,6 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
       >
         {factura && tipoNota && (
           <div className="space-y-6">
-            {/* Alerta de diferencia */}
             <Message
               severity={tipoNota === 'CREDITO' ? "warn" : "info"}
               className="w-full"
@@ -441,7 +444,6 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
               }
             />
 
-            {/* Información de la nota */}
             <div className="border rounded-lg p-4 bg-gray-50">
               <h4 className="font-semibold mb-3">Detalle de la Nota</h4>
               <div className="space-y-2 text-sm">
@@ -468,7 +470,6 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
               </div>
             </div>
 
-            {/* Motivo de la nota */}
             <div className="space-y-2">
               <label htmlFor="motivo-nota" className="block font-semibold text-gray-700">
                 Motivo de la Nota <span className="text-red-500">*</span>
@@ -483,7 +484,6 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
               />
             </div>
 
-            {/* Observaciones adicionales si el motivo es "Otro" */}
             {motivoNota === 'otro' && (
               <div className="space-y-2">
                 <label htmlFor="observaciones-nota" className="block font-semibold text-gray-700">
@@ -498,7 +498,6 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
               </div>
             )}
 
-            {/* Información importante */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex gap-2">
                 <i className="pi pi-info-circle text-blue-600 mt-1"></i>
@@ -510,7 +509,7 @@ const RegistrarPagoDialog: React.FC<RegistrarPagoDialogProps> = ({
             </div>
           </div>
         )}
-      </Dialog>
+      </Dialog> */}
     </>
   );
 };

@@ -2,10 +2,13 @@
 
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Toast } from 'primereact/toast';
+import { Carousel } from 'primereact/carousel';
 import FacturasFilters from '@/components/pages/facturas/FacturasFilters';
 import FacturasTable from '@/components/pages/facturas/FacturasTable';
 import FacturaForm from '@/components/pages/registrar_factura/FacturaForm';
+import PagarTodasDialog from '@/components/pages/facturas/PagarTodasDialog';
 import { useFacturas } from '@/hooks/useFacturas';
+import { FacturaDetalle } from '@/types/facturas';
 
 interface SummaryData {
   totalPendiente: number;
@@ -17,6 +20,9 @@ interface SummaryData {
 const FacturasPage = () => {
   const toast = useRef<Toast>(null);
   const [showRegistrarFactura, setShowRegistrarFactura] = useState(false);
+  const [showPagarTodas, setShowPagarTodas] = useState(false);
+  const [proveedorSeleccionado, setProveedorSeleccionado] = useState<string>('');
+  const [facturasProveedor, setFacturasProveedor] = useState<FacturaDetalle[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData>({
     totalPendiente: 0,
     totalPagado: 0,
@@ -128,6 +134,41 @@ const FacturasPage = () => {
     fetchFacturas(); // Actualizar la lista de facturas
   }, [fetchFacturas]);
 
+  const handlePagarTodas = useCallback((proveedor: string) => {
+    // Filtrar facturas pendientes del proveedor seleccionado
+    const facturasPendientes = todasLasFacturas.filter(
+      factura => factura.proveedor.nombre_proveedor === proveedor &&
+                 factura.estado_factura === 'PENDIENTE'
+    );
+
+    if (facturasPendientes.length === 0) {
+      toast.current?.show({
+        severity: 'warn',
+        summary: 'Sin facturas pendientes',
+        detail: `No hay facturas pendientes para ${proveedor}`,
+        life: 3000
+      });
+      return;
+    }
+
+    setProveedorSeleccionado(proveedor);
+    setFacturasProveedor(facturasPendientes);
+    setShowPagarTodas(true);
+  }, [todasLasFacturas]);
+
+  const handlePagoMasivoRegistrado = useCallback(() => {
+    setShowPagarTodas(false);
+    setProveedorSeleccionado('');
+    setFacturasProveedor([]);
+    fetchFacturas(); // Actualizar la lista de facturas
+    toast.current?.show({
+      severity: 'success',
+      summary: 'Pagos registrados',
+      detail: 'Todas las facturas han sido pagadas exitosamente',
+      life: 3000
+    });
+  }, [fetchFacturas]);
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <Toast ref={toast} />
@@ -176,29 +217,57 @@ const FacturasPage = () => {
         {Object.keys(summaryData.saldoPorProveedor).length > 0 && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Saldo por Proveedor</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(summaryData.saldoPorProveedor).map(([proveedor, saldo]) => (
-                <div key={proveedor} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">{proveedor}</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-red-600">Pendiente:</span>
-                      <span className="font-medium text-red-600">{formatCurrency(saldo.pendiente)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-green-600">Pagado:</span>
-                      <span className="font-medium text-green-600">{formatCurrency(saldo.pagado)}</span>
-                    </div>
-                    <div className="flex justify-between border-t pt-1 mt-2">
-                      <span className="font-medium text-gray-700">Total:</span>
-                      <span className="font-bold text-blue-600">
-                        {formatCurrency(saldo.pendiente + saldo.pagado)}
-                      </span>
+            <Carousel
+              value={Object.entries(summaryData.saldoPorProveedor)}
+              numVisible={3}
+              numScroll={1}
+              responsiveOptions={[
+                {
+                  breakpoint: '1024px',
+                  numVisible: 2,
+                  numScroll: 1
+                },
+                {
+                  breakpoint: '768px',
+                  numVisible: 1,
+                  numScroll: 1
+                }
+              ]}
+              itemTemplate={(item: [string, { pendiente: number; pagado: number }]) => {
+                const [proveedor, saldo] = item;
+                return (
+                  <div className="px-2">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-900 mb-3">{proveedor}</h4>
+                      <div className="space-y-1 text-sm mb-3">
+                        <div className="flex justify-between">
+                          <span className="text-red-600">Pendiente:</span>
+                          <span className="font-medium text-red-600">{formatCurrency(saldo.pendiente)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-600">Pagado:</span>
+                          <span className="font-medium text-green-600">{formatCurrency(saldo.pagado)}</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-1 mt-2">
+                          <span className="font-medium text-gray-700">Total:</span>
+                          <span className="font-bold text-blue-600">
+                            {formatCurrency(saldo.pendiente + saldo.pagado)}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handlePagarTodas(proveedor)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={saldo.pendiente <= 0}
+                      >
+                        <i className="pi pi-check-circle"></i>
+                        <span>Pagar Todas</span>
+                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                );
+              }}
+            />
           </div>
         )}
 
@@ -233,6 +302,15 @@ const FacturasPage = () => {
         visible={showRegistrarFactura}
         onHide={() => setShowRegistrarFactura(false)}
         onSuccess={handleFacturaRegistrada}
+      />
+
+      {/* Modal de pagar todas las facturas */}
+      <PagarTodasDialog
+        visible={showPagarTodas}
+        proveedor={proveedorSeleccionado}
+        facturas={facturasProveedor}
+        onHide={() => setShowPagarTodas(false)}
+        onPagoRegistrado={handlePagoMasivoRegistrado}
       />
     </div>
   );

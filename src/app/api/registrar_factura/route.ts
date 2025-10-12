@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client"; // 👈 para detectar errores de Prisma
 
+interface InsumoInput {
+  id_insumo: number;
+  cantidad: number;
+  precio: number;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -34,7 +40,7 @@ export async function POST(req: Request) {
         id_proveedor: proveedor,
         id_orden_compra: ordenCompra || null,
         detalle_factura_proveedor: {
-          create: insumos.map((i: any) => ({
+          create: (insumos as InsumoInput[]).map((i) => ({
             id_insumo: i.id_insumo,
             cantidad: i.cantidad,
             precio: i.precio,
@@ -45,7 +51,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(factura, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     // 👇 Manejo específico para facturas duplicadas
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return NextResponse.json(
