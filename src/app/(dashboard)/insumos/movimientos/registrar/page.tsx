@@ -24,7 +24,8 @@ export default function Page() {
 
   const [idDeposito, setIdDeposito] = useState<number | null>(null);
   const [idRazon, setIdRazon] = useState<number | null>(null);
-  const [observaciones, setObservaciones] = useState(""); // 👈 global
+  const [observaciones, setObservaciones] = useState(""); 
+  const [ordenCompra, setOrdenCompra] = useState("");   // 👈 nuevo estado
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -51,11 +52,12 @@ export default function Page() {
       setLoading(true);
 
       const payload = {
-        id_usuario: 1,
+        id_usuario: 1, // 👈 después podrías tomarlo del contexto de sesión
         id_deposito: idDeposito,
         id_razon_movimiento: idRazon,
-        numero_comprobante: "ABC123",
-        observaciones, // 👈 ahora global
+        numero_comprobante: "ABC123", // 👈 aún hardcodeado
+        observaciones,
+        orden_compra: ordenCompra || null,   // 👈 nuevo
         detalles: detalles.map((d) => ({
           id_insumo: d.id_insumo,
           cantidad: d.cantidad,
@@ -96,8 +98,10 @@ export default function Page() {
         setIdDeposito={setIdDeposito}
         idRazon={idRazon}
         setIdRazon={setIdRazon}
-        observaciones={observaciones}          // 👈 nuevo
-        setObservaciones={setObservaciones}    // 👈 nuevo
+        observaciones={observaciones}
+        setObservaciones={setObservaciones}
+        ordenCompra={ordenCompra}             // 👈 nuevo
+        setOrdenCompra={setOrdenCompra}       // 👈 nuevo
       />
       <MovimientosTable
         data={detalles}

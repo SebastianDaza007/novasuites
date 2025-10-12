@@ -15,7 +15,26 @@ export async function POST(req: Request) {
       numero_comprobante,
       observaciones,
       detalles,
+      orden_compra, // 👈 número de orden de compra (string opcional)
     } = data;
+
+    // 🔎 Validar si se envió orden de compra
+    let id_orden_compra: number | null = null;
+
+    if (orden_compra) {
+      const orden = await prisma.orden_compra.findUnique({
+        where: { numero_orden: orden_compra },
+      });
+
+      if (!orden) {
+        return new Response(
+          JSON.stringify({ error: "Orden de compra no encontrada" }),
+          { status: 400 }
+        );
+      }
+
+      id_orden_compra = orden.id_orden_compra;
+    }
 
     // Traer la razón para saber qué tipo de movimiento es
     const razon = await prisma.razon_movimiento.findUnique({
@@ -38,11 +57,11 @@ export async function POST(req: Request) {
         id_razon_movimiento,
         numero_comprobante,
         observaciones,
+        id_orden_compra, // 👈 se guarda si existe
         detalles: {
           create: detalles.map((d: any) => ({
             id_insumo: d.id_insumo,
             cantidad: d.cantidad,
-            costo_unitario: null,
             lote: d.lote,
             fecha_vencimiento: d.vencimiento ? new Date(d.vencimiento) : null,
           })),
@@ -69,7 +88,7 @@ export async function POST(req: Request) {
                 razon.tipo_movimiento === "TRANSFERENCIA_SALIDA"
               ? { decrement: d.cantidad }
               : razon.tipo_movimiento === "AJUSTE"
-              ? { set: d.cantidad } // 👈 en ajuste se sobrescribe el valor
+              ? { set: d.cantidad }
               : undefined,
           stock_minimo: d.stockMinimo ?? undefined,
           stock_critico: d.stockCritico ?? undefined,
