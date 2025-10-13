@@ -245,6 +245,7 @@ model huespedes {
   email       String?
 
   reservas    reservas[]
+  tarjetas     tarjeta_huesped[]
 }
 
 // 🔹 Habitaciones
@@ -264,15 +265,20 @@ model habitaciones {
 model reservas {
   id_reservas      Int       @id @default(autoincrement())
   id_huesped       Int
+  id_metodo_pago Int?
+  id_tarjeta Int?            @unique
   fecha_checkin    DateTime  @db.Date
   fecha_checkout   DateTime  @db.Date
-  cantidad_personas Int
+  cantidad_adultos Int   @default(1)
+  cantidad_menores Int   @default(0)
   estado           estado_reservacion
   monto_total      Decimal   @db.Decimal(12,2)
-  creado_en        DateTime? @default(now())
-  actualizado_en   DateTime?
+  fecha_creacion   DateTime? @default(now())
+  fecha_actualizacion   DateTime? @updatedAt
 
-  huesped          huespedes             @relation(fields: [id_huesped], references: [id_huespedes])
+  metodo_pago    metodo_pago? @relation(fields: [id_metodo_pago], references: [id_metodo])
+  huesped        huespedes    @relation(fields: [id_huesped], references: [id_huespedes])
+  tarjeta        tarjeta_huesped? @relation(name: "ReservaTarjeta", fields: [id_tarjeta], references: [id_tarjeta]) // ✅ lado dueño
   reservas_habitaciones reservas_habitaciones[]
   facturas_ventas  facturas_ventas[]
 }
@@ -329,6 +335,25 @@ model detalle_facturas_ventas {
   precio_unitario     Decimal   @db.Decimal(12,2)
 
   factura facturas_ventas @relation(fields: [id_factura], references: [id_facturas_ventas])
+}
+
+model metodo_pago {
+  id_metodo       Int     @id @default(autoincrement())
+  nombre_metodo   String
+  activo          Boolean @default(true)
+  reservas        reservas[]
+}
+
+model tarjeta_huesped {
+  id_tarjeta      Int     @id @default(autoincrement())
+  id_huesped      Int
+  numero_tarjeta  String
+  titular_tarjeta        String
+  fecha_expiracion DateTime @db.Date
+  codigo_seguridad Int
+
+  huesped  huespedes @relation(fields: [id_huesped], references: [id_huespedes])
+  reserva  reservas? @relation(name: "ReservaTarjeta") // ✅ sin fields ni references
 }
 
 // 🔹 Notas de crédito
