@@ -97,14 +97,19 @@ const ReservasFilters: React.FC<ReservasFiltersProps> = ({
                 <Button
                     label="Limpiar Filtros"
                     icon="pi pi-filter-slash"
+                    className="p-button-outlined h-10"
                     onClick={onLimpiarFiltros}
-                    className="p-button-outlined"
+                    style={{
+                        borderColor: '#EFC87A',
+                        color: '#C88419',
+                        backgroundColor: 'transparent'
+                    }}
                 />
                 <Button
-                    label="Actualizar"
                     icon="pi pi-refresh"
+                    className="p-button-outlined h-10"
                     onClick={onActualizar}
-                    className="p-button-outlined"
+                    tooltip="Actualizar"
                 />
             </div>
         </Card>

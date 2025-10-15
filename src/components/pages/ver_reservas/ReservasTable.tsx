@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTablePageEvent, DataTableSortEvent } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
@@ -52,8 +52,8 @@ interface ReservasTableProps {
         sortField: string;
         sortOrder: number;
     };
-    onPage: (event: any) => void;
-    onSort: (event: any) => void;
+    onPage: (event: DataTablePageEvent) => void;
+    onSort: (event: DataTableSortEvent) => void;
     toastRef: React.RefObject<Toast | null>;
 }
 
@@ -68,6 +68,7 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
 }) => {
     const router = useRouter();
     const [showCancelarDialog, setShowCancelarDialog] = useState(false);
+    const [showDetallesDialog, setShowDetallesDialog] = useState(false);
     const [selectedReserva, setSelectedReserva] = useState<Reserva | null>(null);
     const [motivoCancelacion, setMotivoCancelacion] = useState('');
     const [cancelando, setCancelando] = useState(false);
@@ -154,6 +155,11 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                 ${Number(rowData.monto_total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
         );
+    };
+
+    const handleVerDetalles = (reserva: Reserva) => {
+        setSelectedReserva(reserva);
+        setShowDetallesDialog(true);
     };
 
     const handleCheckIn = (reserva: Reserva) => {
@@ -268,6 +274,17 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
 
         return (
             <div className="flex gap-2">
+                {/* Botón Ver Detalles - Siempre visible */}
+                <Button
+                    icon="pi pi-eye"
+                    rounded
+                    outlined
+                    className="p-button-info"
+                    tooltip="Ver detalles"
+                    tooltipOptions={{ position: 'top' }}
+                    onClick={() => handleVerDetalles(rowData)}
+                />
+
                 {/* Botón Check-in - Solo visible para estado RESERVADA */}
                 {isReservada && (
                     <Button
@@ -305,11 +322,6 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                         tooltipOptions={{ position: 'top' }}
                         onClick={() => handleOpenCancelar(rowData)}
                     />
-                )}
-
-                {/* Estados finalizados - Sin acciones */}
-                {(isCancelada || isCheckout) && (
-                    <span className="text-xs text-gray-500 italic">Sin acciones disponibles</span>
                 )}
             </div>
         );
@@ -366,8 +378,6 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     <Column
                         header="Estado"
                         body={estadoTemplate}
-                        sortable
-                        sortField="estado"
                         style={{ width: '130px' }}
                     />
                     <Column
@@ -384,6 +394,216 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     />
                 </DataTable>
             </Card>
+
+            {/* Dialog para ver detalles */}
+            <Dialog
+                header="Detalles de la Reserva"
+                visible={showDetallesDialog}
+                onHide={() => {
+                    setShowDetallesDialog(false);
+                    setSelectedReserva(null);
+                }}
+                style={{ width: '700px', maxWidth: '90vw' }}
+                modal
+            >
+                {selectedReserva && (
+                    <div className="space-y-4">
+                        {/* Información de la Reserva */}
+                        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                            <h3 className="font-bold text-lg text-blue-900 mb-2 flex items-center gap-2">
+                                <i className="pi pi-info-circle"></i>
+                                Información General
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span className="font-semibold text-gray-700">ID Reserva:</span>
+                                    <p className="text-gray-900">#{selectedReserva.id_reservas}</p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Estado:</span>
+                                    <div className="mt-1">
+                                        <Tag
+                                            value={selectedReserva.estado}
+                                            severity={
+                                                selectedReserva.estado === 'RESERVADA' ? 'info' :
+                                                selectedReserva.estado === 'CHECKIN' ? 'success' :
+                                                selectedReserva.estado === 'CHECKOUT' ? 'warning' : 'danger'
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Fecha de Creación:</span>
+                                    <p className="text-gray-900">
+                                        {new Date(selectedReserva.fecha_creacion).toLocaleString('es-AR', {
+                                            dateStyle: 'medium',
+                                            timeStyle: 'short'
+                                        })}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Monto Total:</span>
+                                    <p className="text-gray-900 font-bold text-lg">
+                                        ${Number(selectedReserva.monto_total).toLocaleString('es-AR', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Información del Huésped */}
+                        <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                            <h3 className="font-bold text-lg text-green-900 mb-2 flex items-center gap-2">
+                                <i className="pi pi-user"></i>
+                                Información del Huésped
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span className="font-semibold text-gray-700">Nombre Completo:</span>
+                                    <p className="text-gray-900">
+                                        {selectedReserva.huesped.nombre} {selectedReserva.huesped.apellido}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Documento:</span>
+                                    <p className="text-gray-900">{selectedReserva.huesped.documento}</p>
+                                </div>
+                                {selectedReserva.huesped.telefono && (
+                                    <div>
+                                        <span className="font-semibold text-gray-700">Teléfono:</span>
+                                        <p className="text-gray-900">{selectedReserva.huesped.telefono}</p>
+                                    </div>
+                                )}
+                                {selectedReserva.huesped.email && (
+                                    <div>
+                                        <span className="font-semibold text-gray-700">Email:</span>
+                                        <p className="text-gray-900">{selectedReserva.huesped.email}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Fechas de Estadía */}
+                        <div className="bg-purple-50 border-l-4 border-purple-400 p-4 rounded">
+                            <h3 className="font-bold text-lg text-purple-900 mb-2 flex items-center gap-2">
+                                <i className="pi pi-calendar"></i>
+                                Fechas de Estadía
+                            </h3>
+                            <div className="grid grid-cols-3 gap-3 text-sm">
+                                <div>
+                                    <span className="font-semibold text-gray-700">Check-in:</span>
+                                    <p className="text-gray-900 font-semibold">
+                                        {new Date(selectedReserva.fecha_checkin).toLocaleDateString('es-AR', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Check-out:</span>
+                                    <p className="text-gray-900 font-semibold">
+                                        {new Date(selectedReserva.fecha_checkout).toLocaleDateString('es-AR', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Duración:</span>
+                                    <p className="text-gray-900 font-semibold">
+                                        {Math.ceil(
+                                            (new Date(selectedReserva.fecha_checkout).getTime() -
+                                                new Date(selectedReserva.fecha_checkin).getTime()) /
+                                            (1000 * 60 * 60 * 24)
+                                        )} noche(s)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Personas */}
+                        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
+                            <h3 className="font-bold text-lg text-orange-900 mb-2 flex items-center gap-2">
+                                <i className="pi pi-users"></i>
+                                Cantidad de Personas
+                            </h3>
+                            <div className="grid grid-cols-3 gap-3 text-sm">
+                                <div>
+                                    <span className="font-semibold text-gray-700">Adultos:</span>
+                                    <p className="text-gray-900 text-2xl font-bold">{selectedReserva.cantidad_adultos}</p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Menores:</span>
+                                    <p className="text-gray-900 text-2xl font-bold">{selectedReserva.cantidad_menores}</p>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-700">Total:</span>
+                                    <p className="text-gray-900 text-2xl font-bold">
+                                        {selectedReserva.cantidad_adultos + selectedReserva.cantidad_menores}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Habitaciones */}
+                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                            <h3 className="font-bold text-lg text-yellow-900 mb-3 flex items-center gap-2">
+                                <i className="pi pi-home"></i>
+                                Habitaciones Asignadas
+                            </h3>
+                            <div className="space-y-3">
+                                {selectedReserva.reservas_habitaciones.map((rh, index) => (
+                                    <div key={index} className="bg-white border border-yellow-200 rounded-lg p-3 shadow-sm">
+                                        <div className="grid grid-cols-3 gap-3 text-sm">
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Número:</span>
+                                                <p className="text-gray-900 font-bold text-lg">
+                                                    {rh.habitacion.numero}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Tipo:</span>
+                                                <p className="text-gray-900">{rh.habitacion.tipo}</p>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Capacidad:</span>
+                                                <p className="text-gray-900">
+                                                    {rh.habitacion.capacidad} persona(s)
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 pt-2 border-t border-yellow-100">
+                                            <span className="font-semibold text-gray-700 text-sm">
+                                                Personas asignadas a esta habitación:
+                                            </span>
+                                            <p className="text-gray-900 font-semibold">{rh.cantidad_personas}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Botón Cerrar */}
+                        <div className="flex justify-end pt-3 border-t">
+                            <Button
+                                label="Cerrar"
+                                icon="pi pi-times"
+                                onClick={() => {
+                                    setShowDetallesDialog(false);
+                                    setSelectedReserva(null);
+                                }}
+                                className="p-button-secondary"
+                            />
+                        </div>
+                    </div>
+                )}
+            </Dialog>
 
             {/* Dialog para cancelar reserva */}
             <Dialog

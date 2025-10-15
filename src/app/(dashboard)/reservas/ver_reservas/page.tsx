@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Toast } from 'primereact/toast';
+import { DataTablePageEvent, DataTableSortEvent } from 'primereact/datatable';
 import ReservasFilters from '@/components/pages/ver_reservas/ReservasFilters';
 import ReservasTable from '@/components/pages/ver_reservas/ReservasTable';
 
@@ -104,20 +105,20 @@ const VerReservas = () => {
         fetchReservas();
     }, [lazyState, busqueda, fechaInicio, fechaFin, estadoFiltro]);
 
-    const onPage = (event: any) => {
+    const onPage = (event: DataTablePageEvent) => {
         setLazyState({
             ...lazyState,
             first: event.first,
             rows: event.rows,
-            page: event.page
+            page: event.page || 0
         });
     };
 
-    const onSort = (event: any) => {
+    const onSort = (event: DataTableSortEvent) => {
         setLazyState({
             ...lazyState,
-            sortField: event.sortField,
-            sortOrder: event.sortOrder
+            sortField: event.sortField as string,
+            sortOrder: event.sortOrder || 1
         });
     };
 
