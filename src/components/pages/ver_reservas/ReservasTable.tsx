@@ -163,8 +163,8 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
     };
 
     const handleCheckIn = (reserva: Reserva) => {
-        // Redirigir a la página de check-in (por crear)
-        router.push(`/reservas/check-in/${reserva.id_reservas}`);
+        // Redirigir a la página de check-in con el ID de la reserva
+        router.push(`/reservas/checkin?reserva=${reserva.id_reservas}`);
     };
 
     const calcularDiasAnticipacion = (fechaCheckin: string): number => {
