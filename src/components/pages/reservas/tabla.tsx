@@ -1,150 +1,170 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
-import { Checkbox } from "primereact/checkbox";
+import { Checkbox, CheckboxChangeEvent } from "primereact/checkbox";
 import { Tag } from "primereact/tag";
 
-export type RoomEstado = "reservado" | "ocupado" | "libre";
+// 🔹 Tipos
+export type RoomEstado =
+  | "DISPONIBLE"
+  | "OCUPADA"
+  | "LIMPIEZA"
+  | "MANTENIMIENTO";
 
 export interface RoomRow {
-  habitacion: string;
+  id_habitaciones: number;
+  numero: string;
   tipo: string;
-  camas: string;
+  capacidad: number;
+  precio_base: number;
   estado: RoomEstado;
-  nota?: string; // para "No disponible hasta el 16/11"
   seleccionado?: boolean;
 }
 
-const initialRows: RoomRow[] = [
-  { habitacion: "112", tipo: "Suite", camas: "1 - Matrimonial\n3 - Individuales", estado: "reservado", nota: "No disponible" },
-  { habitacion: "212", tipo: "Suite", camas: "1 - Matrimonial\n3 - Individuales", estado: "ocupado", nota: "No disponible hasta el 16/11" },
-  { habitacion: "512", tipo: "Suite", camas: "2 - Matrimonial\n1 - Individuales", estado: "libre", seleccionado: false },
-  { habitacion: "014", tipo: "Suite", camas: "1 - Matrimonial", estado: "libre", seleccionado: true },
-];
+// 🔹 Props
+interface AvailabilityTableProps {
+  onSelectHabitaciones?: (habitaciones: RoomRow[]) => void;
+  habitacionesSeleccionadas?: RoomRow[];
+}
 
-const estadoBadgeClass = (estado: RoomEstado) => {
-  switch (estado) {
-    case "reservado":
-      return "bg-indigo-700 text-white"; // azul oscuro
-    case "ocupado":
-      return "bg-orange-500 text-white"; // naranja
-    case "libre":
-      return "bg-blue-400 text-white"; // azul claro
-    default:
-      return "bg-gray-300 text-gray-800";
-  }
-};
+const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
+  onSelectHabitaciones,
+  habitacionesSeleccionadas = [], // ✅ Valor por defecto
+}) => {
+  const [rows, setRows] = useState<RoomRow[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
-const AvailabilityTable: React.FC = () => {
-  const [rows, setRows] = useState<RoomRow[]>(initialRows);
+  // 🔄 Cargar habitaciones desde la API
+  const fetchHabitaciones = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/habitaciones");
+      const data: RoomRow[] = await res.json();
+      setRows(data);
+    } catch (error) {
+      console.error("❌ Error al obtener habitaciones:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchHabitaciones();
+  }, []);
+
+  // 🧩 Al seleccionar/desmarcar una habitación
+  const handleSelect = (id: number, checked: boolean): void => {
+    const updated = rows.map((r) =>
+      r.id_habitaciones === id ? { ...r, seleccionado: checked } : r
+    );
+    setRows(updated);
+
+    // 🔹 Enviar las habitaciones seleccionadas completas
+    const seleccionadas = updated.filter((r) => r.seleccionado);
+    onSelectHabitaciones?.(seleccionadas);
+  };
+
+  // 🧠 Sincronizar estado visual con el padre
+  useEffect(() => {
+    if (habitacionesSeleccionadas.length === 0) {
+      // Si no hay seleccionadas, limpiar selección local
+      setRows((prev) => prev.map((r) => ({ ...r, seleccionado: false })));
+    } else {
+      // Actualizar selección visual según el padre
+      setRows((prev) =>
+        prev.map((r) => ({
+          ...r,
+          seleccionado: habitacionesSeleccionadas.some(
+            (h: RoomRow) => h.id_habitaciones === r.id_habitaciones
+          ),
+        }))
+      );
+    }
+  }, [habitacionesSeleccionadas]);
+
+  // 🏷️ Mostrar estado con colores
+  const estadoBody = (row: RoomRow): React.ReactNode => {
+    const colorMap: Record<RoomEstado, string> = {
+      DISPONIBLE: "bg-green-500 text-white",
+      OCUPADA: "bg-orange-500 text-white",
+      LIMPIEZA: "bg-yellow-400 text-black",
+      MANTENIMIENTO: "bg-gray-400 text-white",
+    };
+
+    return (
+      <Tag
+        value={row.estado}
+        className={`text-xs px-2 py-1 ${colorMap[row.estado]}`}
+        rounded
+      />
+    );
+  };
+
+  // ☑️ Checkbox de selección sincronizado
+  const seleccionarBody = (row: RoomRow): React.ReactNode => {
+    if (row.estado !== "DISPONIBLE") {
+      return <span className="text-gray-500 text-xs">No disponible</span>;
+    }
+
+    const isChecked = !!habitacionesSeleccionadas?.some(
+      (h) => h.id_habitaciones === row.id_habitaciones
+    );
+
+    return (
+      <Checkbox
+        inputId={`chk-${row.id_habitaciones}`}
+        checked={isChecked}
+        onChange={(e: CheckboxChangeEvent) =>
+          handleSelect(row.id_habitaciones, e.checked ?? false)
+        }
+      />
+    );
+  };
+
+  // 🔹 Cabecera de la tabla
   const header = (
     <div className="flex items-center justify-between px-1 py-2">
-      <h2 className="text-2xl font-semibold text-gray-900">Habitaciones disponibles</h2>
+      <h2 className="text-2xl font-semibold text-gray-900">
+        Habitaciones disponibles
+      </h2>
       <Button
         icon="pi pi-refresh"
         rounded
         outlined
         aria-label="Actualizar"
-        className="!h-10 !w-10 flex items-center justify-center"
+        className="!h-10 !w-10"
         tooltip="Actualizar disponibilidad"
         tooltipOptions={{ position: "left" }}
-        onClick={() => {
-          // aquí se podría reconsultar la API
-          setRows((r) => [...r]);
-        }}
+        onClick={fetchHabitaciones}
+        loading={loading}
       />
     </div>
-  );
-
-  const estadoBody = (row: RoomRow) => {
-    // PrimeReact Tag severities supported: 'secondary' | 'success' | 'info' | 'warning' | 'danger' | 'contrast'
-    // Usamos 'info' para azul y aplicamos una clase extra en 'reservado' para un azul más oscuro.
-    const map: Record<RoomEstado, { value: string; severity: "info" | "warning"; extraClass?: string }> = {
-      reservado: { value: "Reservado", severity: "info", extraClass: "bg-indigo-700 text-white border-none" },
-      ocupado: { value: "Ocupado", severity: "warning" },
-      libre: { value: "Libre", severity: "info" },
-    };
-    const cfg = map[row.estado];
-    return <Tag value={cfg.value} severity={cfg.severity} rounded className={`text-xs px-2 py-1 ${cfg.extraClass ?? ""}`} />;
-  };
-
-  const seleccionarBody = (row: RoomRow, options: any) => {
-    if (row.estado !== "libre") {
-      return <span className="text-gray-500 text-xs whitespace-normal break-words">{row.nota ?? "No disponible"}</span>;
-    }
-    return (
-      <Checkbox
-        checked={!!row.seleccionado}
-        onChange={(e) => {
-          const checked = e.checked as boolean;
-          setRows((prev) => prev.map((r) => (r.habitacion === row.habitacion ? { ...r, seleccionado: checked } : r)));
-        }}
-      />
-    );
-  };
-
-  const camasBody = (row: RoomRow) => (
-    <div className="whitespace-pre-line">{row.camas}</div>
   );
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
       <DataTable
         value={rows}
+        dataKey="id_habitaciones" // ✅ clave única
         size="small"
         header={header}
-        tableStyle={{ width: '100%', tableLayout: 'auto' }}
+        tableStyle={{ width: "100%", tableLayout: "auto" }}
         rowHover
         stripedRows
-        className="rounded-lg"
+        loading={loading}
       >
-        <Column
-          field="habitacion"
-          header="Habitaciones"
-          headerStyle={{ backgroundColor: 'white', color: 'black', fontWeight: 600 }}
-          bodyClassName="text-gray-700 whitespace-normal break-words"
-          bodyStyle={{ textAlign: 'left' }}
-          style={{ minWidth: '8rem' }}
-        />
-        <Column
-          field="tipo"
-          header="Tipo"
-          headerStyle={{ backgroundColor: 'white', color: 'black', fontWeight: 600 }}
-          bodyClassName="text-gray-700 whitespace-normal break-words"
-          bodyStyle={{ textAlign: 'left' }}
-          style={{ minWidth: '8rem' }}
-        />
-        <Column
-          field="camas"
-          header="Camas"
-          body={camasBody}
-          headerStyle={{ backgroundColor: 'white', color: 'black', fontWeight: 600 }}
-          bodyClassName="text-gray-700 whitespace-pre-line break-words"
-          bodyStyle={{ textAlign: 'left' }}
-          style={{ minWidth: '11rem' }}
-        />
-        <Column
-          header="Estado"
-          body={estadoBody}
-          headerStyle={{ backgroundColor: 'white', color: 'black', fontWeight: 600 }}
-          bodyClassName="text-center whitespace-normal"
-          style={{ minWidth: '6rem' }}
-        />
-        <Column
-          header="Seleccionar"
-          body={seleccionarBody}
-          headerStyle={{ backgroundColor: 'white', color: 'black', fontWeight: 600 }}
-          bodyClassName="text-left whitespace-normal break-words"
-          style={{ minWidth: '8rem' }}
-        />
+        <Column field="numero" header="N°" />
+        <Column field="tipo" header="Tipo" />
+        <Column field="capacidad" header="Capacidad" />
+        <Column field="precio_base" header="Precio Base (ARS)" />
+        <Column header="Estado" body={estadoBody} />
+        <Column header="Seleccionar" body={seleccionarBody} />
       </DataTable>
     </div>
   );
-}
-;
+};
 
 export default AvailabilityTable;
