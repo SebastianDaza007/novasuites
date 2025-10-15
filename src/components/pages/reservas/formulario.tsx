@@ -14,6 +14,7 @@ import type { RoomRow } from "./tabla";
 // 🧩 Tipado de las props: ahora recibe habitaciones completas
 interface GuestFormProps {
   habitacionesSeleccionadas: RoomRow[];
+  onTotalPersonasChange?: (total: number) => void;
 }
 
 // 💳 Métodos de pago
@@ -23,7 +24,7 @@ const paymentTypes = [
   { label: "Transferencia", value: 4 },
 ];
 
-const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas }) => {
+const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTotalPersonasChange }) => {
   const toast = useRef<Toast>(null);
 
   // -----------------------------
@@ -54,6 +55,12 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas }) => {
     );
     setMonto(total);
   }, [habitacionesSeleccionadas]);
+
+  // 🔄 Notificar al padre cuando cambie el total de personas
+  useEffect(() => {
+    const total = adultos + menores;
+    onTotalPersonasChange?.(total);
+  }, [adultos, menores, onTotalPersonasChange]);
 
 
   // -----------------------------
@@ -115,6 +122,38 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas }) => {
         return;
       }
 
+      // 🔍 Validar que la suma de personas asignadas coincida con el total
+      const totalPersonasAsignadas = habitacionesSeleccionadas.reduce(
+        (sum, hab) => sum + (hab.cantidad_personas || 0),
+        0
+      );
+      const totalPersonasReserva = adultos + menores;
+
+      if (totalPersonasAsignadas !== totalPersonasReserva) {
+        toast.current?.show({
+          severity: "warn",
+          summary: "Distribución incorrecta",
+          detail: `Has asignado ${totalPersonasAsignadas} persona(s) en las habitaciones, pero la reserva es para ${totalPersonasReserva} persona(s). Por favor ajusta la distribución.`,
+          life: 5000,
+        });
+        return;
+      }
+
+      // 🔍 Validar que ninguna habitación exceda su capacidad
+      const habitacionExcedida = habitacionesSeleccionadas.find(
+        (hab) => (hab.cantidad_personas || 0) > hab.capacidad
+      );
+
+      if (habitacionExcedida) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Capacidad excedida",
+          detail: `La habitación ${habitacionExcedida.numero} tiene capacidad para ${habitacionExcedida.capacidad} persona(s) pero has asignado ${habitacionExcedida.cantidad_personas}.`,
+          life: 5000,
+        });
+        return;
+      }
+
       // 🔧 Construcción del payload que espera la API
       const payload = {
         huesped: {
@@ -146,7 +185,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas }) => {
             : undefined,
         habitaciones: habitacionesSeleccionadas.map((h) => ({
           id_habitacion: h.id_habitaciones,
-          cantidad_personas: adultos + menores,
+          cantidad_personas: h.cantidad_personas || 1,
         })),
       };
 

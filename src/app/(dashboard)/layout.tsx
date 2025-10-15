@@ -16,7 +16,7 @@ export default function DashboardLayout({
     { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Ver Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" },{ name: "Ver Movimientos", code: "", path: "/insumos/movimientos/movimientos-insumos" }]},
     { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "Registrar/Ver Proveedores",  path: "/proveedores" }, { name: "Facturas", path: "/facturas" }]},
     { icon: "pi-copy", label: "Ordenes de Compra", path: "/orden_compra" , options: [{ name: "Registrar/Ver Ordenes de Compra",  path: "/orden_compra" }]},
-    { icon: "pi-calendar-plus", path: "/reservas", label: "Reservas", options: [{ name: "Agendar reserva",  path: "/reservas" }]},
+    { icon: "pi-calendar-plus", path: "/reservas", label: "Reservas", options: [{ name: "Agendar reserva",  path: "/reservas" }, { name: "Ver reservas", path: "/reservas/ver_reservas" }, { name: "Check-in", path: "/reservas/checkin" }]},
   ];
 
 
