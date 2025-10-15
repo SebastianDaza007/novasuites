@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { InputText } from "primereact/inputtext";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
 import { InputNumber, InputNumberValueChangeEvent } from "primereact/inputnumber";
@@ -8,37 +8,65 @@ import { Calendar } from "primereact/calendar";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 
+// 🧩 Importamos el tipo RoomRow desde el componente tabla
+import type { RoomRow } from "./tabla";
+
+// 🧩 Tipado de las props: ahora recibe habitaciones completas
+interface GuestFormProps {
+  habitacionesSeleccionadas: RoomRow[];
+}
+
+// 💳 Métodos de pago
 const paymentTypes = [
-  { label: "Tarjeta", value: 1 },
-  { label: "Efectivo", value: 2 },
-  { label: "Transferencia", value: 3 },
+  { label: "Tarjeta", value: 2 },
+  { label: "Efectivo", value: 3 },
+  { label: "Transferencia", value: 4 },
 ];
 
-const GuestForm: React.FC = () => {
+const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas }) => {
   const toast = useRef<Toast>(null);
 
-  // Datos del huésped
+  // -----------------------------
+  // 🧍 Datos del huésped
+  // -----------------------------
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [documento, setDocumento] = useState("");
   const [mail, setMail] = useState("");
   const [telefono, setTelefono] = useState("");
 
-  // Datos de la reserva
+  // -----------------------------
+  // 🏨 Datos de la reserva
+  // -----------------------------
   const [adultos, setAdultos] = useState<number>(1);
   const [menores, setMenores] = useState<number>(0);
+
   const [desde, setDesde] = useState<Date | null>(null);
   const [hasta, setHasta] = useState<Date | null>(null);
   const [formaPago, setFormaPago] = useState<number | null>(null);
   const [monto, setMonto] = useState<number>(0);
 
-  // Tarjeta (opcional)
+  // 🧮 Calcular el monto total según las habitaciones seleccionadas
+  useEffect(() => {
+    const total = habitacionesSeleccionadas.reduce(
+      (acc, hab) => acc + Number(hab.precio_base || 0),
+      0
+    );
+    setMonto(total);
+  }, [habitacionesSeleccionadas]);
+
+
+  // -----------------------------
+  // 💳 Datos de la tarjeta (opcional)
+  // -----------------------------
   const [numeroTarjeta, setNumeroTarjeta] = useState("");
   const [titularTarjeta, setTitularTarjeta] = useState("");
   const [expiracion, setExpiracion] = useState<Date | null>(null);
   const [codigoSeguridad, setCodigoSeguridad] = useState<number | null>(null);
 
-  // Limpiar formulario
+  // -----------------------------
+  // 🧹 Limpiar formulario
+  // -----------------------------
   const clear = (): void => {
     setNombre("");
     setApellido("");
@@ -55,7 +83,9 @@ const GuestForm: React.FC = () => {
     setCodigoSeguridad(null);
   };
 
-  // Enviar formulario
+  // -----------------------------
+  // 🚀 Enviar formulario
+  // -----------------------------
   const handleSubmit = async (): Promise<void> => {
     try {
       if (!desde || !hasta) {
@@ -76,6 +106,16 @@ const GuestForm: React.FC = () => {
         return;
       }
 
+      if (habitacionesSeleccionadas.length === 0) {
+        toast.current?.show({
+          severity: "warn",
+          summary: "Sin habitaciones",
+          detail: "Selecciona al menos una habitación disponible",
+        });
+        return;
+      }
+
+      // 🔧 Construcción del payload que espera la API
       const payload = {
         huesped: {
           nombre,
@@ -90,7 +130,7 @@ const GuestForm: React.FC = () => {
           fecha_checkout: hasta.toISOString().split("T")[0],
           cantidad_adultos: adultos,
           cantidad_menores: menores,
-          estado: "RESERVADA", // 🔹 Fijo por ahora
+          estado: "RESERVADA",
           monto_total: monto,
         },
         tarjeta:
@@ -98,13 +138,16 @@ const GuestForm: React.FC = () => {
             ? {
                 numero_tarjeta: numeroTarjeta,
                 titular_tarjeta: titularTarjeta,
-                fecha_expiracion: expiracion ? expiracion.toISOString().split("T")[0] : null,
+                fecha_expiracion: expiracion
+                  ? expiracion.toISOString().split("T")[0]
+                  : null,
                 codigo_seguridad: codigoSeguridad ?? 0,
               }
             : undefined,
-        habitaciones: [
-          { id_habitacion: 1, cantidad_personas: adultos + menores },
-        ],
+        habitaciones: habitacionesSeleccionadas.map((h) => ({
+          id_habitacion: h.id_habitaciones,
+          cantidad_personas: adultos + menores,
+        })),
       };
 
       console.log("📤 Enviando reserva:", payload);
@@ -140,40 +183,54 @@ const GuestForm: React.FC = () => {
     }
   };
 
-  // Render
+  // -----------------------------
+  // 🧱 Render del formulario
+  // -----------------------------
   return (
     <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
       <Toast ref={toast} />
-      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Registrar reserva</h2>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        Registrar reserva
+      </h2>
 
       <div className="flex flex-col gap-3">
         {/* Huesped */}
         <div className="grid grid-cols-2 gap-2">
           <InputText
             value={nombre}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNombre(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNombre(e.target.value)
+            }
             placeholder="Nombre (Ej: Juan)"
           />
           <InputText
             value={apellido}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApellido(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setApellido(e.target.value)
+            }
             placeholder="Apellido (Ej: Pérez)"
           />
         </div>
 
         <InputText
           value={documento}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDocumento(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setDocumento(e.target.value)
+          }
           placeholder="Documento / Pasaporte"
         />
         <InputText
           value={mail}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMail(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setMail(e.target.value)
+          }
           placeholder="Correo electrónico"
         />
         <InputText
           value={telefono}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTelefono(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setTelefono(e.target.value)
+          }
           placeholder="Teléfono (Ej: 3875555555)"
         />
 
@@ -193,17 +250,39 @@ const GuestForm: React.FC = () => {
           />
         </div>
 
+        {/* Cantidades de personas */}
         <div className="grid grid-cols-2 gap-2">
-          <InputNumber
-            value={adultos}
-            onValueChange={(e: InputNumberValueChangeEvent) => setAdultos(e.value ?? 1)}
-            placeholder="Cantidad de adultos"
-          />
-          <InputNumber
-            value={menores}
-            onValueChange={(e: InputNumberValueChangeEvent) => setMenores(e.value ?? 0)}
-            placeholder="Cantidad de menores"
-          />
+          <div className="flex flex-col">
+            <label className="text-sm text-gray-600 mb-1">Cantidad de adultos</label>
+            <InputNumber
+              value={adultos}
+              onValueChange={(e: InputNumberValueChangeEvent) =>
+                setAdultos(e.value ?? 1)
+              }
+              showButtons
+              buttonLayout="stacked"
+              inputClassName="w-full"
+              className="w-full"
+              min={1}
+              max={10}
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm text-gray-600 mb-1">Cantidad de menores</label>
+            <InputNumber
+              value={menores}
+              onValueChange={(e: InputNumberValueChangeEvent) =>
+                setMenores(e.value ?? 0)
+              }
+              showButtons
+              buttonLayout="stacked"
+              inputClassName="w-full"
+              className="w-full"
+              min={0}
+              max={10}
+            />
+          </div>
         </div>
 
         <Dropdown
@@ -215,23 +294,29 @@ const GuestForm: React.FC = () => {
 
         <InputNumber
           value={monto}
-          onValueChange={(e: InputNumberValueChangeEvent) => setMonto(e.value ?? 0)}
           mode="currency"
           currency="ARS"
           locale="es-AR"
           placeholder="Monto total"
+          disabled
         />
 
         {/* Tarjeta (opcional) */}
-        <h3 className="text-lg font-semibold mt-3">Tarjeta (opcional)</h3>
+        <h3 className="text-base font-semibold text-gray-800 mt-3 mb-1">
+          Tarjeta (opcional)
+        </h3>
         <InputText
           value={numeroTarjeta}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumeroTarjeta(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setNumeroTarjeta(e.target.value)
+          }
           placeholder="Número de tarjeta (Ej: 4111111111111111)"
         />
         <InputText
           value={titularTarjeta}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitularTarjeta(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setTitularTarjeta(e.target.value)
+          }
           placeholder="Titular de la tarjeta"
         />
         <div className="grid grid-cols-2 gap-2">
@@ -243,19 +328,29 @@ const GuestForm: React.FC = () => {
           />
           <InputNumber
             value={codigoSeguridad}
-            onValueChange={(e: InputNumberValueChangeEvent) => setCodigoSeguridad(e.value ?? 0)}
+            onValueChange={(e: InputNumberValueChangeEvent) =>
+              setCodigoSeguridad(e.value ?? 0)
+            }
             placeholder="Código CVV"
           />
         </div>
 
         {/* Acciones */}
         <div className="flex items-center gap-3 pt-4">
-          <Button label="Limpiar" icon="pi pi-filter-slash" severity="secondary" onClick={clear} />
+          <Button
+            label="Limpiar"
+            icon="pi pi-filter-slash"
+            severity="secondary"
+            onClick={clear}
+          />
           <Button
             label="Registrar reserva"
             icon="pi pi-check"
             onClick={handleSubmit}
-            style={{ backgroundColor: "#22C55E", borderColor: "#22C55E" }}
+            style={{
+              backgroundColor: "#22C55E",
+              borderColor: "#22C55E",
+            }}
           />
         </div>
       </div>
