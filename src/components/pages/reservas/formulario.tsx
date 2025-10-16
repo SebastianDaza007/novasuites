@@ -7,9 +7,21 @@ import { InputNumber, InputNumberValueChangeEvent } from "primereact/inputnumber
 import { Calendar } from "primereact/calendar";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
+import { AutoComplete, AutoCompleteCompleteEvent } from "primereact/autocomplete";
+import { InputMask } from "primereact/inputmask";
 
 // 🧩 Importamos el tipo RoomRow desde el componente tabla
 import type { RoomRow } from "./tabla";
+
+// 🧩 Tipado de huésped
+interface Huesped {
+  id_huespedes: number;
+  nombre: string;
+  apellido: string;
+  documento: string;
+  telefono?: string | null;
+  email?: string | null;
+}
 
 // 🧩 Tipado de las props: ahora recibe habitaciones completas
 interface GuestFormProps {
@@ -35,6 +47,10 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
   const [documento, setDocumento] = useState("");
   const [mail, setMail] = useState("");
   const [telefono, setTelefono] = useState("");
+
+  // Para el AutoComplete
+  const [sugerenciasHuespedes, setSugerenciasHuespedes] = useState<Huesped[]>([]);
+  const [huespedSeleccionado, setHuespedSeleccionado] = useState<Huesped | null>(null);
 
   // -----------------------------
   // 🏨 Datos de la reserva
@@ -62,13 +78,53 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
     onTotalPersonasChange?.(total);
   }, [adultos, menores, onTotalPersonasChange]);
 
+  // 🔍 Buscar huéspedes para AutoComplete
+  const buscarHuespedes = async (event: AutoCompleteCompleteEvent): Promise<void> => {
+    const query = event.query;
+
+    if (!query || query.length < 2) {
+      setSugerenciasHuespedes([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/huespedes?search=${encodeURIComponent(query)}`);
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        setSugerenciasHuespedes(data.data);
+      } else {
+        setSugerenciasHuespedes([]);
+      }
+    } catch (error) {
+      console.error("Error buscando huespedes:", error);
+      setSugerenciasHuespedes([]);
+    }
+  };
+
+  // 🔄 Cuando se selecciona un huésped del AutoComplete
+  const handleSeleccionarHuesped = (huesped: Huesped): void => {
+    setHuespedSeleccionado(huesped);
+    setDocumento(huesped.documento);
+    setNombre(huesped.nombre);
+    setApellido(huesped.apellido);
+    setTelefono(huesped.telefono || "");
+    setMail(huesped.email || "");
+
+    toast.current?.show({
+      severity: "success",
+      summary: "Huesped seleccionado",
+      detail: `${huesped.nombre} ${huesped.apellido}`,
+      life: 2000,
+    });
+  };
 
   // -----------------------------
   // 💳 Datos de la tarjeta (opcional)
   // -----------------------------
   const [numeroTarjeta, setNumeroTarjeta] = useState("");
   const [titularTarjeta, setTitularTarjeta] = useState("");
-  const [expiracion, setExpiracion] = useState<Date | null>(null);
+  const [expiracion, setExpiracion] = useState<string>("");
   const [codigoSeguridad, setCodigoSeguridad] = useState<number | null>(null);
 
   // -----------------------------
@@ -86,7 +142,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
     setFormaPago(null);
     setNumeroTarjeta("");
     setTitularTarjeta("");
-    setExpiracion(null);
+    setExpiracion("");
     setCodigoSeguridad(null);
   };
 
@@ -178,7 +234,12 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
                 numero_tarjeta: numeroTarjeta,
                 titular_tarjeta: titularTarjeta,
                 fecha_expiracion: expiracion
-                  ? expiracion.toISOString().split("T")[0]
+                  ? (() => {
+                      // Convertir MM/YY a fecha (primer día del mes)
+                      const [mes, anio] = expiracion.split('/');
+                      const anioCompleto = `20${anio}`;
+                      return `${anioCompleto}-${mes}-01`;
+                    })()
                   : null,
                 codigo_seguridad: codigoSeguridad ?? 0,
               }
@@ -251,12 +312,36 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
           />
         </div>
 
-        <InputText
+        <AutoComplete
           value={documento}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setDocumento(e.target.value)
-          }
+          suggestions={sugerenciasHuespedes}
+          completeMethod={buscarHuespedes}
+          delay={200}
+          minLength={2}
+          onChange={(e) => {
+            // Si es un string, actualizar documento
+            if (typeof e.value === 'string') {
+              setDocumento(e.value);
+            } else if (e.value && typeof e.value === 'object') {
+              // Si es un objeto Huesped, extraer el documento
+              setDocumento(e.value.documento);
+            }
+          }}
+          onSelect={(e) => handleSeleccionarHuesped(e.value as Huesped)}
+          field="documento"
           placeholder="Documento / Pasaporte"
+          inputClassName="w-full"
+          className="w-full"
+          itemTemplate={(huesped: Huesped) => (
+            <div className="flex flex-col py-2">
+              <span className="font-semibold">
+                {huesped.nombre} {huesped.apellido}
+              </span>
+              <span className="text-sm text-gray-600">
+                DNI: {huesped.documento}
+              </span>
+            </div>
+          )}
         />
         <InputText
           value={mail}
@@ -359,11 +444,25 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
           placeholder="Titular de la tarjeta"
         />
         <div className="grid grid-cols-2 gap-2">
-          <Calendar
+          <InputMask
             value={expiracion}
-            onChange={(e) => setExpiracion(e.value ?? null)}
-            placeholder="Vencimiento"
-            showIcon
+            onChange={(e) => {
+              const valor = e.value ?? "";
+              // Validar que el mes esté entre 01 y 12
+              if (valor.length >= 2) {
+                const mes = parseInt(valor.substring(0, 2));
+                if (mes > 12) {
+                  setExpiracion("12" + valor.substring(2));
+                  return;
+                } else if (mes === 0 && valor.length === 2) {
+                  setExpiracion("01");
+                  return;
+                }
+              }
+              setExpiracion(valor);
+            }}
+            mask="99/99"
+            placeholder="Vencimiento (MM/AA)"
           />
           <InputNumber
             value={codigoSeguridad}
