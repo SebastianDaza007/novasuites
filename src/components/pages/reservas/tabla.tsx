@@ -6,6 +6,7 @@ import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { Checkbox, CheckboxChangeEvent } from "primereact/checkbox";
 import { Tag } from "primereact/tag";
+import { InputNumber, InputNumberValueChangeEvent } from "primereact/inputnumber";
 
 // 🔹 Tipos
 export type RoomEstado =
@@ -22,17 +23,20 @@ export interface RoomRow {
   precio_base: number;
   estado: RoomEstado;
   seleccionado?: boolean;
+  cantidad_personas?: number;
 }
 
 // 🔹 Props
 interface AvailabilityTableProps {
   onSelectHabitaciones?: (habitaciones: RoomRow[]) => void;
   habitacionesSeleccionadas?: RoomRow[];
+  totalPersonasReserva?: number;
 }
 
 const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
   onSelectHabitaciones,
   habitacionesSeleccionadas = [], // ✅ Valor por defecto
+  totalPersonasReserva = 10, // ✅ Máximo por defecto
 }) => {
   const [rows, setRows] = useState<RoomRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -58,11 +62,25 @@ const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
   // 🧩 Al seleccionar/desmarcar una habitación
   const handleSelect = (id: number, checked: boolean): void => {
     const updated = rows.map((r) =>
-      r.id_habitaciones === id ? { ...r, seleccionado: checked } : r
+      r.id_habitaciones === id
+        ? { ...r, seleccionado: checked, cantidad_personas: checked ? 1 : 0 }
+        : r
     );
     setRows(updated);
 
     // 🔹 Enviar las habitaciones seleccionadas completas
+    const seleccionadas = updated.filter((r) => r.seleccionado);
+    onSelectHabitaciones?.(seleccionadas);
+  };
+
+  // 🧩 Al cambiar la cantidad de personas en una habitación
+  const handleCantidadPersonasChange = (id: number, cantidad: number): void => {
+    const updated = rows.map((r) =>
+      r.id_habitaciones === id ? { ...r, cantidad_personas: cantidad } : r
+    );
+    setRows(updated);
+
+    // 🔹 Enviar las habitaciones seleccionadas actualizadas
     const seleccionadas = updated.filter((r) => r.seleccionado);
     onSelectHabitaciones?.(seleccionadas);
   };
@@ -124,6 +142,41 @@ const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
     );
   };
 
+  // 👥 Input de cantidad de personas
+  const cantidadPersonasBody = (row: RoomRow): React.ReactNode => {
+    const isChecked = !!habitacionesSeleccionadas?.some(
+      (h) => h.id_habitaciones === row.id_habitaciones
+    );
+
+    if (!isChecked || row.estado !== "DISPONIBLE") {
+      return <span className="text-gray-400 text-xs">-</span>;
+    }
+
+    const habitacionSeleccionada = habitacionesSeleccionadas.find(
+      (h) => h.id_habitaciones === row.id_habitaciones
+    );
+
+    // El máximo es el menor entre: capacidad de la habitación y total de personas en la reserva
+    const maxPersonas = Math.min(row.capacidad, totalPersonasReserva);
+
+    return (
+      <InputNumber
+        value={habitacionSeleccionada?.cantidad_personas || 1}
+        onValueChange={(e: InputNumberValueChangeEvent) =>
+          handleCantidadPersonasChange(row.id_habitaciones, e.value ?? 1)
+        }
+        showButtons
+        buttonLayout="horizontal"
+        min={1}
+        max={maxPersonas}
+        className="w-full"
+        inputClassName="w-16 text-center"
+        decrementButtonClassName="p-button-sm"
+        incrementButtonClassName="p-button-sm"
+      />
+    );
+  };
+
   // 🔹 Cabecera de la tabla
   const header = (
     <div className="flex items-center justify-between px-1 py-2">
@@ -156,12 +209,13 @@ const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
         stripedRows
         loading={loading}
       >
-        <Column field="numero" header="N°" />
-        <Column field="tipo" header="Tipo" />
-        <Column field="capacidad" header="Capacidad" />
-        <Column field="precio_base" header="Precio Base (ARS)" />
-        <Column header="Estado" body={estadoBody} />
-        <Column header="Seleccionar" body={seleccionarBody} />
+        <Column field="numero" header="N°" style={{ width: '80px' }} />
+        <Column field="tipo" header="Tipo" style={{ width: '120px' }} />
+        <Column field="capacidad" header="Capacidad" style={{ width: '100px' }} />
+        <Column field="precio_base" header="Precio Base (ARS)" style={{ width: '150px' }} />
+        <Column header="Estado" body={estadoBody} style={{ width: '130px' }} />
+        <Column header="Seleccionar" body={seleccionarBody} style={{ width: '110px' }} />
+        <Column header="Personas asignadas" body={cantidadPersonasBody} style={{ width: '180px' }} />
       </DataTable>
     </div>
   );
