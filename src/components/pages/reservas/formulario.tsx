@@ -2,18 +2,15 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { InputText } from "primereact/inputtext";
-import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
-import { InputNumber, InputNumberValueChangeEvent } from "primereact/inputnumber";
+import { Dropdown } from "primereact/dropdown";
+import { InputNumber } from "primereact/inputnumber";
 import { Calendar } from "primereact/calendar";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import { AutoComplete, AutoCompleteCompleteEvent } from "primereact/autocomplete";
 import { InputMask } from "primereact/inputmask";
-
-// 🧩 Importamos el tipo RoomRow desde el componente tabla
 import type { RoomRow } from "./tabla";
 
-// 🧩 Tipado de huésped
 interface Huesped {
   id_huespedes: number;
   nombre: string;
@@ -23,20 +20,23 @@ interface Huesped {
   email?: string | null;
 }
 
-// 🧩 Tipado de las props: ahora recibe habitaciones completas
 interface GuestFormProps {
   habitacionesSeleccionadas: RoomRow[];
   onTotalPersonasChange?: (total: number) => void;
+  onReservaExitosa?: () => void;
 }
 
-// 💳 Métodos de pago
 const paymentTypes = [
   { label: "Tarjeta", value: 2 },
   { label: "Efectivo", value: 3 },
   { label: "Transferencia", value: 4 },
 ];
 
-const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTotalPersonasChange }) => {
+const GuestForm: React.FC<GuestFormProps> = ({
+  habitacionesSeleccionadas,
+  onTotalPersonasChange,
+  onReservaExitosa,
+}) => {
   const toast = useRef<Toast>(null);
 
   // -----------------------------
@@ -48,7 +48,6 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
   const [mail, setMail] = useState("");
   const [telefono, setTelefono] = useState("");
 
-  // Para el AutoComplete
   const [sugerenciasHuespedes, setSugerenciasHuespedes] = useState<Huesped[]>([]);
   const [huespedSeleccionado, setHuespedSeleccionado] = useState<Huesped | null>(null);
 
@@ -57,7 +56,6 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
   // -----------------------------
   const [adultos, setAdultos] = useState<number>(1);
   const [menores, setMenores] = useState<number>(0);
-
   const [desde, setDesde] = useState<Date | null>(null);
   const [hasta, setHasta] = useState<Date | null>(null);
   const [formaPago, setFormaPago] = useState<number | null>(null);
@@ -78,10 +76,9 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
     onTotalPersonasChange?.(total);
   }, [adultos, menores, onTotalPersonasChange]);
 
-  // 🔍 Buscar huéspedes para AutoComplete
+  // 🔍 Buscar huéspedes
   const buscarHuespedes = async (event: AutoCompleteCompleteEvent): Promise<void> => {
     const query = event.query;
-
     if (!query || query.length < 2) {
       setSugerenciasHuespedes([]);
       return;
@@ -90,19 +87,15 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
     try {
       const res = await fetch(`/api/huespedes?search=${encodeURIComponent(query)}`);
       const data = await res.json();
-
-      if (data.success && data.data) {
-        setSugerenciasHuespedes(data.data);
-      } else {
-        setSugerenciasHuespedes([]);
-      }
+      if (data.success && data.data) setSugerenciasHuespedes(data.data);
+      else setSugerenciasHuespedes([]);
     } catch (error) {
       console.error("Error buscando huespedes:", error);
       setSugerenciasHuespedes([]);
     }
   };
 
-  // 🔄 Cuando se selecciona un huésped del AutoComplete
+  // 🔄 Seleccionar huésped
   const handleSeleccionarHuesped = (huesped: Huesped): void => {
     setHuespedSeleccionado(huesped);
     setDocumento(huesped.documento);
@@ -110,26 +103,21 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
     setApellido(huesped.apellido);
     setTelefono(huesped.telefono || "");
     setMail(huesped.email || "");
-
     toast.current?.show({
       severity: "success",
-      summary: "Huesped seleccionado",
+      summary: "Huésped seleccionado",
       detail: `${huesped.nombre} ${huesped.apellido}`,
       life: 2000,
     });
   };
 
-  // -----------------------------
-  // 💳 Datos de la tarjeta (opcional)
-  // -----------------------------
+  // 💳 Datos de tarjeta
   const [numeroTarjeta, setNumeroTarjeta] = useState("");
   const [titularTarjeta, setTitularTarjeta] = useState("");
   const [expiracion, setExpiracion] = useState<string>("");
   const [codigoSeguridad, setCodigoSeguridad] = useState<number | null>(null);
 
-  // -----------------------------
   // 🧹 Limpiar formulario
-  // -----------------------------
   const clear = (): void => {
     setNombre("");
     setApellido("");
@@ -144,11 +132,10 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
     setTitularTarjeta("");
     setExpiracion("");
     setCodigoSeguridad(null);
+    setHuespedSeleccionado(null);
   };
 
-  // -----------------------------
   // 🚀 Enviar formulario
-  // -----------------------------
   const handleSubmit = async (): Promise<void> => {
     try {
       if (!desde || !hasta) {
@@ -178,7 +165,6 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
         return;
       }
 
-      // 🔍 Validar que la suma de personas asignadas coincida con el total
       const totalPersonasAsignadas = habitacionesSeleccionadas.reduce(
         (sum, hab) => sum + (hab.cantidad_personas || 0),
         0
@@ -189,36 +175,27 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
         toast.current?.show({
           severity: "warn",
           summary: "Distribución incorrecta",
-          detail: `Has asignado ${totalPersonasAsignadas} persona(s) en las habitaciones, pero la reserva es para ${totalPersonasReserva} persona(s). Por favor ajusta la distribución.`,
+          detail: `Has asignado ${totalPersonasAsignadas} persona(s) pero la reserva es para ${totalPersonasReserva}.`,
           life: 5000,
         });
         return;
       }
 
-      // 🔍 Validar que ninguna habitación exceda su capacidad
       const habitacionExcedida = habitacionesSeleccionadas.find(
         (hab) => (hab.cantidad_personas || 0) > hab.capacidad
       );
-
       if (habitacionExcedida) {
         toast.current?.show({
           severity: "error",
           summary: "Capacidad excedida",
-          detail: `La habitación ${habitacionExcedida.numero} tiene capacidad para ${habitacionExcedida.capacidad} persona(s) pero has asignado ${habitacionExcedida.cantidad_personas}.`,
+          detail: `La habitación ${habitacionExcedida.numero} tiene capacidad para ${habitacionExcedida.capacidad}.`,
           life: 5000,
         });
         return;
       }
 
-      // 🔧 Construcción del payload que espera la API
       const payload = {
-        huesped: {
-          nombre,
-          apellido,
-          documento,
-          telefono,
-          email: mail,
-        },
+        huesped: { nombre, apellido, documento, telefono, email: mail },
         reserva: {
           id_metodo_pago: formaPago,
           fecha_checkin: desde.toISOString().split("T")[0],
@@ -235,10 +212,8 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
                 titular_tarjeta: titularTarjeta,
                 fecha_expiracion: expiracion
                   ? (() => {
-                      // Convertir MM/YY a fecha (primer día del mes)
-                      const [mes, anio] = expiracion.split('/');
-                      const anioCompleto = `20${anio}`;
-                      return `${anioCompleto}-${mes}-01`;
+                      const [mes, anio] = expiracion.split("/");
+                      return `20${anio}-${mes}-01`;
                     })()
                   : null,
                 codigo_seguridad: codigoSeguridad ?? 0,
@@ -250,19 +225,14 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
         })),
       };
 
-      console.log("📤 Enviando reserva:", payload);
-
       const res = await fetch("/api/registrar_reserva", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const data: { error?: string } = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Error al registrar la reserva");
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al registrar la reserva");
 
       toast.current?.show({
         severity: "success",
@@ -271,62 +241,48 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
       });
 
       clear();
+      onReservaExitosa?.();
     } catch (error) {
       if (error instanceof Error) {
         console.error("❌ Error al enviar reserva:", error);
         toast.current?.show({
           severity: "error",
           summary: "Error",
-          detail: error.message || "Ocurrió un problema al registrar la reserva",
+          detail: error.message,
         });
       }
     }
   };
 
-  // -----------------------------
-  // 🧱 Render del formulario
-  // -----------------------------
   return (
     <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
       <Toast ref={toast} />
-      <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-        Registrar reserva
-      </h2>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Registrar reserva</h2>
+
+      {/* ✅ Recuadro con datos del huésped seleccionado */}
+      {huespedSeleccionado && (
+        <div className="p-3 mb-3 rounded-lg border bg-gray-50 text-sm text-gray-700">
+          <p>
+            <strong>Huésped seleccionado:</strong>{" "}
+            {huespedSeleccionado.nombre} {huespedSeleccionado.apellido}
+          </p>
+          <p className="text-gray-600">DNI: {huespedSeleccionado.documento}</p>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
-        {/* Huesped */}
-        <div className="grid grid-cols-2 gap-2">
-          <InputText
-            value={nombre}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setNombre(e.target.value)
-            }
-            placeholder="Nombre (Ej: Juan)"
-          />
-          <InputText
-            value={apellido}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setApellido(e.target.value)
-            }
-            placeholder="Apellido (Ej: Pérez)"
-          />
-        </div>
-
+        {/* 🔹 DNI primero */}
         <AutoComplete
           value={documento}
           suggestions={sugerenciasHuespedes}
           completeMethod={buscarHuespedes}
           delay={200}
           minLength={2}
-          onChange={(e) => {
-            // Si es un string, actualizar documento
-            if (typeof e.value === 'string') {
-              setDocumento(e.value);
-            } else if (e.value && typeof e.value === 'object') {
-              // Si es un objeto Huesped, extraer el documento
-              setDocumento(e.value.documento);
-            }
-          }}
+          onChange={(e) =>
+            typeof e.value === "string"
+              ? setDocumento(e.value)
+              : setDocumento(e.value?.documento ?? "")
+          }
           onSelect={(e) => handleSeleccionarHuesped(e.value as Huesped)}
           field="documento"
           placeholder="Documento / Pasaporte"
@@ -337,52 +293,49 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
               <span className="font-semibold">
                 {huesped.nombre} {huesped.apellido}
               </span>
-              <span className="text-sm text-gray-600">
-                DNI: {huesped.documento}
-              </span>
+              <span className="text-sm text-gray-600">DNI: {huesped.documento}</span>
             </div>
           )}
         />
+
+        {/* 🔹 Resto de datos del huésped */}
+        <div className="grid grid-cols-2 gap-2">
+          <InputText
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            placeholder="Nombre (Ej: Juan)"
+          />
+          <InputText
+            value={apellido}
+            onChange={(e) => setApellido(e.target.value)}
+            placeholder="Apellido (Ej: Pérez)"
+          />
+        </div>
+
         <InputText
           value={mail}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setMail(e.target.value)
-          }
+          onChange={(e) => setMail(e.target.value)}
           placeholder="Correo electrónico"
         />
         <InputText
           value={telefono}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setTelefono(e.target.value)
-          }
+          onChange={(e) => setTelefono(e.target.value)}
           placeholder="Teléfono (Ej: 3875555555)"
         />
 
-        {/* Reserva */}
+        {/* 🔹 Reserva */}
         <div className="grid grid-cols-2 gap-2">
-          <Calendar
-            value={desde}
-            onChange={(e) => setDesde(e.value ?? null)}
-            placeholder="Fecha check-in"
-            showIcon
-          />
-          <Calendar
-            value={hasta}
-            onChange={(e) => setHasta(e.value ?? null)}
-            placeholder="Fecha check-out"
-            showIcon
-          />
+          <Calendar value={desde} onChange={(e) => setDesde(e.value ?? null)} placeholder="Fecha check-in" showIcon />
+          <Calendar value={hasta} onChange={(e) => setHasta(e.value ?? null)} placeholder="Fecha check-out" showIcon />
         </div>
 
-        {/* Cantidades de personas */}
+        {/* 🔹 Cantidades */}
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col">
             <label className="text-sm text-gray-600 mb-1">Cantidad de adultos</label>
             <InputNumber
               value={adultos}
-              onValueChange={(e: InputNumberValueChangeEvent) =>
-                setAdultos(e.value ?? 1)
-              }
+              onValueChange={(e) => setAdultos(e.value ?? 1)}
               showButtons
               buttonLayout="stacked"
               inputClassName="w-full"
@@ -391,14 +344,11 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
               max={10}
             />
           </div>
-
           <div className="flex flex-col">
             <label className="text-sm text-gray-600 mb-1">Cantidad de menores</label>
             <InputNumber
               value={menores}
-              onValueChange={(e: InputNumberValueChangeEvent) =>
-                setMenores(e.value ?? 0)
-              }
+              onValueChange={(e) => setMenores(e.value ?? 0)}
               showButtons
               buttonLayout="stacked"
               inputClassName="w-full"
@@ -411,7 +361,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
 
         <Dropdown
           value={formaPago}
-          onChange={(e: DropdownChangeEvent) => setFormaPago(e.value)}
+          onChange={(e) => setFormaPago(e.value)}
           options={paymentTypes}
           placeholder="Método de pago"
         />
@@ -425,22 +375,18 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
           disabled
         />
 
-        {/* Tarjeta (opcional) */}
+        {/* 🔹 Tarjeta opcional */}
         <h3 className="text-base font-semibold text-gray-800 mt-3 mb-1">
           Tarjeta (opcional)
         </h3>
         <InputText
           value={numeroTarjeta}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setNumeroTarjeta(e.target.value)
-          }
-          placeholder="Número de tarjeta (Ej: 4111111111111111)"
+          onChange={(e) => setNumeroTarjeta(e.target.value)}
+          placeholder="Número de tarjeta"
         />
         <InputText
           value={titularTarjeta}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setTitularTarjeta(e.target.value)
-          }
+          onChange={(e) => setTitularTarjeta(e.target.value)}
           placeholder="Titular de la tarjeta"
         />
         <div className="grid grid-cols-2 gap-2">
@@ -448,32 +394,22 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
             value={expiracion}
             onChange={(e) => {
               const valor = e.value ?? "";
-              // Validar que el mes esté entre 01 y 12
-              if (valor.length >= 2) {
-                const mes = parseInt(valor.substring(0, 2));
-                if (mes > 12) {
-                  setExpiracion("12" + valor.substring(2));
-                  return;
-                } else if (mes === 0 && valor.length === 2) {
-                  setExpiracion("01");
-                  return;
-                }
-              }
-              setExpiracion(valor);
+              const mes = parseInt(valor.substring(0, 2));
+              if (valor.length >= 2 && (mes > 12 || mes === 0))
+                setExpiracion("01");
+              else setExpiracion(valor);
             }}
             mask="99/99"
             placeholder="Vencimiento (MM/AA)"
           />
           <InputNumber
             value={codigoSeguridad}
-            onValueChange={(e: InputNumberValueChangeEvent) =>
-              setCodigoSeguridad(e.value ?? 0)
-            }
+            onValueChange={(e) => setCodigoSeguridad(e.value ?? 0)}
             placeholder="Código CVV"
           />
         </div>
 
-        {/* Acciones */}
+        {/* 🔹 Botones */}
         <div className="flex items-center gap-3 pt-4">
           <Button
             label="Limpiar"
@@ -485,10 +421,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ habitacionesSeleccionadas, onTota
             label="Registrar reserva"
             icon="pi pi-check"
             onClick={handleSubmit}
-            style={{
-              backgroundColor: "#22C55E",
-              borderColor: "#22C55E",
-            }}
+            style={{ backgroundColor: "#22C55E", borderColor: "#22C55E" }}
           />
         </div>
       </div>
