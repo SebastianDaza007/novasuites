@@ -6,11 +6,17 @@ import AvailabilityTable, { RoomRow } from "@/components/pages/reservas/tabla";
 
 export default function ReservasPage() {
   // 🔹 Estado compartido entre los dos componentes
-  // Ahora guardamos las habitaciones completas (con precio_base, tipo, etc.)
   const [habitacionesSeleccionadas, setHabitacionesSeleccionadas] = useState<RoomRow[]>([]);
 
   // 🔹 Total de personas en la reserva (adultos + menores)
   const [totalPersonas, setTotalPersonas] = useState<number>(1);
+
+  // ✅ Nueva función: se llama cuando la reserva se registra con éxito
+  const handleReservaExitosa = (): void => {
+    // Limpia todo el estado compartido
+    setHabitacionesSeleccionadas([]);
+    setTotalPersonas(1);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 overflow-x-hidden">
@@ -20,6 +26,7 @@ export default function ReservasPage() {
           <GuestForm
             habitacionesSeleccionadas={habitacionesSeleccionadas}
             onTotalPersonasChange={setTotalPersonas}
+            onReservaExitosa={handleReservaExitosa} // ✅ callback que limpia todo
           />
         </div>
 
