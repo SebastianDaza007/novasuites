@@ -245,7 +245,7 @@ const PagosParcialessDialog: React.FC<PagosParcialessDialogProps> = ({
               <p className="text-2xl font-bold text-blue-900">{facturasSeleccionadas.length}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total a Pagar</p>
+              <p className="text-sm text-gray-600 mb-1">Total a pagar</p>
               <p className="text-2xl font-bold text-blue-900">{formatCurrency(totalAPagar)}</p>
             </div>
           </div>
