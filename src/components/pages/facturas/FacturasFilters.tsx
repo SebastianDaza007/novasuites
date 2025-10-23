@@ -25,7 +25,7 @@ interface FacturasFiltersProps {
   ) => void;
   onLimpiarFiltros: () => void;
   onActualizar: () => void;
-  onExportar?: () => void;
+  onPagosParciales?: () => void;
   onRegistrarFactura?: () => void;
 }
 
@@ -39,7 +39,7 @@ const FacturasFilters: React.FC<FacturasFiltersProps> = ({
   onFiltroChange,
   onLimpiarFiltros,
   onActualizar,
-  onExportar,
+  onPagosParciales,
   onRegistrarFactura
 }) => {
   return (
@@ -53,12 +53,12 @@ const FacturasFilters: React.FC<FacturasFiltersProps> = ({
           onClick={onRegistrarFactura}
         />
         <div className="flex flex-wrap gap-2">
-          {onExportar && (
+          {onPagosParciales && (
             <Button
-              label="Exportar a PDF/CSV"
-              icon="pi pi-download"
+              label="Realizar pagos parciales"
+              icon="pi pi-wallet"
               severity="info"
-              onClick={onExportar}
+              onClick={onPagosParciales}
             />
           )}
         </div>
