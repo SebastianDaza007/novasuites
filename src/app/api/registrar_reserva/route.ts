@@ -34,7 +34,70 @@ export async function POST(req: NextRequest) {
         }
 
         // ===========================================================
-        // 1️⃣ Buscar o crear huésped
+        // 1️⃣ Validar solapamiento de fechas en habitaciones
+        // ===========================================================
+        const fechaCheckinNueva = new Date(reserva.fecha_checkin);
+        const fechaCheckoutNueva = new Date(reserva.fecha_checkout);
+
+        if (habitaciones && habitaciones.length > 0) {
+            const idsHabitaciones = habitaciones.map((h: { id_habitacion: number }) => h.id_habitacion);
+
+            // Buscar reservas existentes que se solapen con las fechas solicitadas
+            const reservasConflicto = await prisma.reservas_habitaciones.findMany({
+                where: {
+                    id_habitacion: {
+                        in: idsHabitaciones
+                    },
+                    reserva: {
+                        // Solo considerar reservas activas (no CANCELADA ni CHECKOUT)
+                        estado: {
+                            in: ['RESERVADA', 'CHECKIN']
+                        },
+                        // Validar solapamiento de fechas:
+                        // Se solapan si: checkin_nueva < checkout_existente AND checkout_nueva > checkin_existente
+                        AND: [
+                            {
+                                fecha_checkout: {
+                                    gt: fechaCheckinNueva
+                                }
+                            },
+                            {
+                                fecha_checkin: {
+                                    lt: fechaCheckoutNueva
+                                }
+                            }
+                        ]
+                    }
+                },
+                include: {
+                    habitacion: true,
+                    reserva: true
+                }
+            });
+
+            // Si hay conflictos, retornar error con detalles
+            if (reservasConflicto.length > 0) {
+                const habitacionesConflicto = reservasConflicto.map(rc => ({
+                    habitacion: rc.habitacion.numero,
+                    reserva_existente: {
+                        checkin: rc.reserva.fecha_checkin,
+                        checkout: rc.reserva.fecha_checkout,
+                        estado: rc.reserva.estado
+                    }
+                }));
+
+                return NextResponse.json(
+                    {
+                        error: "Conflicto de fechas: Las siguientes habitaciones ya tienen reservas en las fechas seleccionadas",
+                        conflictos: habitacionesConflicto
+                    },
+                    { status: 409 }
+                );
+            }
+        }
+
+        // ===========================================================
+        // 2️⃣ Buscar o crear huésped
         // ===========================================================
         let huespedCreado = await prisma.huespedes.findFirst({
         where: { documento: huesped.documento },
@@ -53,7 +116,7 @@ export async function POST(req: NextRequest) {
         }
 
         // ===========================================================
-        // 2️⃣ Crear la reserva principal
+        // 3️⃣ Crear la reserva principal
         // ===========================================================
         const nuevaReserva = await prisma.reservas.create({
         data: {
@@ -69,7 +132,7 @@ export async function POST(req: NextRequest) {
         });
 
         // ===========================================================
-        // 3️⃣ (Opcional) Si se envía tarjeta, la guardamos y asociamos
+        // 4️⃣ (Opcional) Si se envía tarjeta, la guardamos y asociamos
         // ===========================================================
         if (tarjeta && tarjeta.numero_tarjeta) {
         const tarjetaNueva = await prisma.tarjeta_huesped.create({
@@ -90,7 +153,7 @@ export async function POST(req: NextRequest) {
         }
 
         // ===========================================================
-        // 4️⃣ Registrar habitaciones asociadas a la reserva
+        // 5️⃣ Registrar habitaciones asociadas a la reserva
         // ===========================================================
         // Se espera un array como: [{ id_habitacion: 1, cantidad_personas: 2 }]
         if (habitaciones && habitaciones.length > 0) {
@@ -114,16 +177,14 @@ export async function POST(req: NextRequest) {
             },
             });
 
-            // (Opcional) Actualizamos estado de la habitación
-            await prisma.habitaciones.update({
-            where: { id_habitaciones: hab.id_habitacion },
-            data: { estado: "OCUPADA" }, // o "RESERVADA", según prefieras
-            });
+            // ⚠️ NO cambiar el estado de la habitación aquí
+            // El estado solo debe cambiar a OCUPADA en CHECK-IN, no en RESERVA
+            // Esto permite múltiples reservas futuras sin solapamiento de fechas
         }
         }
 
         // ===========================================================
-        // 5️⃣ Respuesta final
+        // 6️⃣ Respuesta final
         // ===========================================================
         return NextResponse.json(
         {
