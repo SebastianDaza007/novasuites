@@ -7,6 +7,7 @@ import FacturasFilters from '@/components/pages/facturas/FacturasFilters';
 import FacturasTable from '@/components/pages/facturas/FacturasTable';
 import FacturaForm from '@/components/pages/registrar_factura/FacturaForm';
 import PagarTodasDialog from '@/components/pages/facturas/PagarTodasDialog';
+import PagosParcialessDialog from '@/components/pages/facturas/PagosParcialessDialog';
 import { useFacturas } from '@/hooks/useFacturas';
 import { FacturaDetalle } from '@/types/facturas';
 
@@ -21,6 +22,7 @@ const FacturasPage = () => {
   const toast = useRef<Toast>(null);
   const [showRegistrarFactura, setShowRegistrarFactura] = useState(false);
   const [showPagarTodas, setShowPagarTodas] = useState(false);
+  const [showPagosParciales, setShowPagosParciales] = useState(false);
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState<string>('');
   const [facturasProveedor, setFacturasProveedor] = useState<FacturaDetalle[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData>({
@@ -116,13 +118,8 @@ const FacturasPage = () => {
     }
   }, [todasLasFacturas]);
 
-  const handleExportar = useCallback(() => {
-    toast.current?.show({
-      severity: 'info',
-      summary: 'Función en desarrollo',
-      detail: 'La exportación estará disponible próximamente',
-      life: 3000
-    });
+  const handlePagosParciales = useCallback(() => {
+    setShowPagosParciales(true);
   }, []);
 
   const handleRegistrarFactura = useCallback(() => {
@@ -165,6 +162,17 @@ const FacturasPage = () => {
       severity: 'success',
       summary: 'Pagos registrados',
       detail: 'Todas las facturas han sido pagadas exitosamente',
+      life: 3000
+    });
+  }, [fetchFacturas]);
+
+  const handlePagosParcialessRegistrado = useCallback(() => {
+    setShowPagosParciales(false);
+    fetchFacturas(); // Actualizar la lista de facturas
+    toast.current?.show({
+      severity: 'success',
+      summary: 'Pagos registrados',
+      detail: 'Las facturas seleccionadas han sido pagadas exitosamente',
       life: 3000
     });
   }, [fetchFacturas]);
@@ -282,7 +290,7 @@ const FacturasPage = () => {
           onFiltroChange={setFiltro}
           onLimpiarFiltros={limpiarFiltros}
           onActualizar={fetchFacturas}
-          onExportar={handleExportar}
+          onPagosParciales={handlePagosParciales}
           onRegistrarFactura={handleRegistrarFactura}
         />
 
@@ -311,6 +319,13 @@ const FacturasPage = () => {
         facturas={facturasProveedor}
         onHide={() => setShowPagarTodas(false)}
         onPagoRegistrado={handlePagoMasivoRegistrado}
+      />
+
+      {/* Modal de pagos parciales */}
+      <PagosParcialessDialog
+        visible={showPagosParciales}
+        onHide={() => setShowPagosParciales(false)}
+        onPagoRegistrado={handlePagosParcialessRegistrado}
       />
     </div>
   );

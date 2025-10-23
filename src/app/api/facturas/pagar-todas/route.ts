@@ -66,13 +66,13 @@ export async function POST(request: NextRequest) {
         }
       },
       include: {
-        detalles: true
+        detalle_factura_proveedor: true
       }
     });
 
     const totalGeneral = facturaConDetalles.reduce((sum, factura) => {
-      const montoFactura = factura.detalles.reduce((sumDetalle, detalle) =>
-        sumDetalle + (detalle.cantidad * detalle.precio), 0
+      const montoFactura = factura.detalle_factura_proveedor.reduce((sumDetalle, detalle) =>
+        sumDetalle + (Number(detalle.cantidad) * Number(detalle.precio)), 0
       );
       return sum + montoFactura;
     }, 0);
