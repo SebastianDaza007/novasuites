@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       : new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
 
     // =============================================
-    // 💵 INGRESOS MENSUALES
+    // 💵 INGRESOS MENSUALES (SIN CAMBIOS)
     // =============================================
     const facturasVentas = await prisma.facturas_ventas.findMany({
       where: { fecha_emision: { gte: desde, lte: hasta } },
@@ -38,25 +38,17 @@ export async function GET(req: Request) {
     }
 
     // =============================================
-    // 💸 EGRESOS MENSUALES
+    // 💸 EGRESOS MENSUALES (AHORA POR ÓRDENES DE PAGO)
     // =============================================
-    const facturasProveedor = await prisma.factura_proveedor.findMany({
-      where: { fecha_emision: { gte: desde, lte: hasta } },
-      select: {
-        fecha_emision: true,
-        detalle_factura_proveedor: { select: { cantidad: true, precio: true } },
-        estado_factura: true,
-      },
+    const ordenesPago = await prisma.ordenes_pago.findMany({
+      where: { fecha: { gte: desde, lte: hasta } },
+      select: { fecha: true, total: true },
     });
 
     const egresosMap = new Map<string, number>();
-    for (const f of facturasProveedor) {
-      const key = getMonthLabel(f.fecha_emision);
-      const totalFactura = f.detalle_factura_proveedor.reduce(
-        (sum, d) => sum + Number(d.precio) * d.cantidad,
-        0
-      );
-      egresosMap.set(key, (egresosMap.get(key) || 0) + totalFactura);
+    for (const op of ordenesPago) {
+      const key = getMonthLabel(op.fecha);
+      egresosMap.set(key, (egresosMap.get(key) || 0) + Number(op.total));
     }
 
     // =============================================
@@ -82,7 +74,7 @@ export async function GET(req: Request) {
     }));
 
     // =============================================
-    // 📊 BALANCE
+    // 📊 BALANCE (ingresos - egresos por órdenes de pago)
     // =============================================
     const balance = mesesCompletos.map((mes) => {
       const ingreso = ingresosMap.get(mes) || 0;
@@ -91,9 +83,15 @@ export async function GET(req: Request) {
     });
 
     // =============================================
-    // 🧾 FACTURAS PROVEEDOR POR ESTADO
+    // 🧾 FACTURAS PROVEEDOR POR ESTADO (SIN CAMBIOS)
+    //   *Solo para el widget de estados; NO se usa para egresos*
     // =============================================
-    const facturasProveedorPorEstado = facturasProveedor.reduce<Record<string, number>>(
+    const facturasProveedorEstados = await prisma.factura_proveedor.findMany({
+      where: { fecha_emision: { gte: desde, lte: hasta } },
+      select: { estado_factura: true },
+    });
+
+    const facturasProveedorPorEstado = facturasProveedorEstados.reduce<Record<string, number>>(
       (acc, f) => {
         acc[f.estado_factura] = (acc[f.estado_factura] || 0) + 1;
         return acc;
@@ -102,7 +100,7 @@ export async function GET(req: Request) {
     );
 
     // =============================================
-    // 💳 RANKING MÉTODOS DE PAGO
+    // 💳 RANKING MÉTODOS DE PAGO (SIN CAMBIOS)
     // =============================================
     const rankingMetodos = await prisma.reservas.groupBy({
       by: ["id_metodo_pago"],
@@ -127,10 +125,10 @@ export async function GET(req: Request) {
     // =============================================
     return NextResponse.json({
       rango: { desde, hasta },
-      ingresosMensuales,
-      egresosMensuales,
-      balance,
-      facturasProveedorPorEstado,
+      ingresosMensuales,              // devengado (ventas)
+      egresosMensuales,               // caja (órdenes de pago)
+      balance,                        // ingresos - egresos (con órdenes de pago)
+      facturasProveedorPorEstado,     // conteo por estado (informativo)
       rankingMetodos: ranking,
     });
   } catch (error) {
