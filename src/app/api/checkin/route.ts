@@ -21,17 +21,37 @@ export async function GET(request: NextRequest) {
 
     // Calcular rango de fechas válido para check-in
     const ahora = new Date();
-    const mediaHoraAntes = new Date(ahora.getTime() - 30 * 60 * 1000); // 30 minutos antes
-    const unDiaDespues = new Date(ahora);
-    unDiaDespues.setDate(unDiaDespues.getDate() + 1);
-    unDiaDespues.setHours(23, 59, 59, 999);
+
+    // Obtener día actual sin hora
+    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+
+    // Si son las 14:00 o después, mostrar reservas de hoy
+    // Si es antes de las 14:00, mostrar reservas de ayer (que aún están en plazo)
+    const horaActual = ahora.getHours();
+    let inicioRango: Date;
+
+    if (horaActual >= 14) {
+      // Ya pasaron las 14:00, mostrar desde hoy
+      inicioRango = new Date(hoy);
+      inicioRango.setHours(0, 0, 0, 0);
+    } else {
+      // Antes de las 14:00, incluir reservas de ayer
+      inicioRango = new Date(hoy);
+      inicioRango.setDate(inicioRango.getDate() - 1);
+      inicioRango.setHours(0, 0, 0, 0);
+    }
+
+    // Fin: Hasta mañana (para incluir reservas de hoy que tienen plazo hasta mañana)
+    const finRango = new Date(hoy);
+    finRango.setDate(finRango.getDate() + 1);
+    finRango.setHours(23, 59, 59, 999);
 
     // Construir filtros WHERE
     const whereConditions: Prisma.reservasWhereInput = {
       estado: 'RESERVADA',
       fecha_checkin: {
-        gte: mediaHoraAntes,
-        lte: unDiaDespues
+        gte: inicioRango,
+        lte: finRango
       }
     };
 
@@ -128,6 +148,19 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
+          },
+          acompanantes: {
+            select: {
+              id_acompanante: true,
+              nombre: true,
+              apellido: true,
+              dni: true,
+              fecha_nacimiento: true,
+              fecha_creacion: true
+            },
+            orderBy: {
+              id_acompanante: 'asc'
+            }
           }
         },
         orderBy,
@@ -189,6 +222,14 @@ export async function GET(request: NextRequest) {
             estado: rh.habitacion.estado
           }
         })),
+        acompanantes: reserva.acompanantes.map(acomp => ({
+          id_acompanante: acomp.id_acompanante,
+          nombre: acomp.nombre,
+          apellido: acomp.apellido,
+          dni: acomp.dni,
+          fecha_nacimiento: acomp.fecha_nacimiento.toISOString(),
+          fecha_creacion: acomp.fecha_creacion?.toISOString()
+        })),
         // Validaciones adicionales
         validaciones: {
           excede_capacidad: excedeCapacidad,
@@ -230,6 +271,7 @@ export async function POST(request: NextRequest) {
     const {
       id_reserva,
       contacto_actualizado, // { telefono?, email? }
+      acompanantes, // Array de acompañantes a registrar
       crear_factura = true,
       notificar_housekeeping = true
     } = body;
@@ -269,25 +311,37 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validar política de check-in (30 minutos antes hasta 1 día después)
+    // Validar política de check-in (a partir de las 14:00 del día de check-in)
     const ahora = new Date();
     const fechaCheckin = new Date(reserva.fecha_checkin);
-    const mediaHoraAntes = new Date(fechaCheckin.getTime() - 30 * 60 * 1000);
-    const unDiaDespues = new Date(fechaCheckin);
-    unDiaDespues.setDate(unDiaDespues.getDate() + 1);
-    unDiaDespues.setHours(23, 59, 59, 999);
 
-    if (ahora < mediaHoraAntes) {
+    // Usar fechas en zona horaria local de Argentina (UTC-3)
+    // Extraer año, mes, día en UTC y crear fecha local
+    const year = fechaCheckin.getUTCFullYear();
+    const month = fechaCheckin.getUTCMonth();
+    const day = fechaCheckin.getUTCDate();
+
+    // Crear fecha local con el día de la reserva a las 00:00 hora local
+    const diaReserva = new Date(year, month, day, 0, 0, 0, 0);
+
+    // Crear fecha de inicio de check-in: día de la reserva a las 14:00 hora local
+    const inicioCheckin = new Date(year, month, day, 14, 0, 0, 0);
+
+    // Permitir hasta 1 día después a las 23:59 hora local
+    const unDiaDespues = new Date(year, month, day + 1, 23, 59, 59, 999);
+
+    if (ahora < inicioCheckin) {
+      const fechaFormateada = diaReserva.toLocaleDateString('es-AR');
       return NextResponse.json({
         success: false,
-        message: 'El check-in solo puede realizarse desde 30 minutos antes de la hora programada'
+        message: `El check-in solo puede realizarse a partir de las 14:00 horas del ${fechaFormateada}`
       }, { status: 400 });
     }
 
     if (ahora > unDiaDespues) {
       return NextResponse.json({
         success: false,
-        message: 'El plazo para realizar el check-in ha expirado (más de 1 día después)'
+        message: 'El plazo para realizar el check-in ha expirado (más de 1 día después de la fecha programada)'
       }, { status: 400 });
     }
 
@@ -318,6 +372,19 @@ export async function POST(request: NextRequest) {
           telefono: contacto_actualizado.telefono || reserva.huesped.telefono,
           email: contacto_actualizado.email || reserva.huesped.email
         }
+      });
+    }
+
+    // Registrar acompañantes si se proporcionan
+    if (acompanantes && Array.isArray(acompanantes) && acompanantes.length > 0) {
+      await prisma.acompanante.createMany({
+        data: acompanantes.map((acomp: any) => ({
+          nombre: acomp.nombre,
+          apellido: acomp.apellido,
+          dni: acomp.dni,
+          fecha_nacimiento: new Date(acomp.fecha_nacimiento),
+          id_reserva: id_reserva
+        }))
       });
     }
 
@@ -422,6 +489,7 @@ export async function POST(request: NextRequest) {
         estado: reservaActualizada.estado,
         huesped: `${reservaActualizada.huesped.nombre} ${reservaActualizada.huesped.apellido}`,
         habitaciones: reservaActualizada.reservas_habitaciones.map(rh => rh.habitacion.numero).join(', '),
+        acompanantes_registrados: acompanantes ? acompanantes.length : 0,
         factura_creada: facturaCreada ? {
           id_factura: facturaCreada.id_facturas_ventas,
           numero: facturaCreada.numero,

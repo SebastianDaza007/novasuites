@@ -6,6 +6,8 @@ import { Card } from 'primereact/card';
 import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
+import { Calendar } from 'primereact/calendar';
+import { Steps } from 'primereact/steps';
 
 interface Huesped {
     id_huespedes: number;
@@ -48,6 +50,15 @@ interface Validaciones {
     personas_total: number;
 }
 
+interface Acompanante {
+    id_acompanante: number;
+    nombre: string;
+    apellido: string;
+    dni: string;
+    fecha_nacimiento: string;
+    fecha_creacion?: string;
+}
+
 interface Reserva {
     id_reservas: number;
     huesped: Huesped;
@@ -61,6 +72,7 @@ interface Reserva {
     metodo_pago?: MetodoPago | null;
     tarjeta?: Tarjeta | null;
     reservas_habitaciones: ReservaHabitacion[];
+    acompanantes: Acompanante[];
     validaciones?: Validaciones;
 }
 
@@ -104,6 +116,10 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
     const [telefono, setTelefono] = useState('');
     const [email, setEmail] = useState('');
 
+    // Wizard de check-in - pasos
+    const [currentStep, setCurrentStep] = useState(1);
+    const [acompanantesData, setAcompanantesData] = useState<Omit<Acompanante, 'id_acompanante' | 'fecha_creacion'>[]>([]);
+
     // Plantillas para las columnas
     const huespedTemplate = (rowData: Reserva) => {
         return (
@@ -136,18 +152,37 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
     const fechaTemplate = (rowData: Reserva) => {
         const checkin = new Date(rowData.fecha_checkin);
         const checkout = new Date(rowData.fecha_checkout);
-        const dias = Math.ceil((checkout.getTime() - checkin.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Extraer fecha UTC y crear fechas locales con horarios estándar
+        const checkinLocal = new Date(
+            checkin.getUTCFullYear(),
+            checkin.getUTCMonth(),
+            checkin.getUTCDate(),
+            14, 0, 0, 0 // Check-in a las 14:00 hora local
+        );
+
+        const checkoutLocal = new Date(
+            checkout.getUTCFullYear(),
+            checkout.getUTCMonth(),
+            checkout.getUTCDate(),
+            10, 0, 0, 0 // Check-out a las 10:00 hora local
+        );
+
+        const dias = Math.ceil((checkoutLocal.getTime() - checkinLocal.getTime()) / (1000 * 60 * 60 * 24));
 
         return (
             <div>
                 <div className="text-sm">
-                    <strong>Entrada:</strong> {checkin.toLocaleString('es-AR', {
+                    <strong>Entrada:</strong> {checkinLocal.toLocaleString('es-AR', {
                         dateStyle: 'short',
                         timeStyle: 'short'
                     })}
                 </div>
                 <div className="text-sm">
-                    <strong>Salida:</strong> {checkout.toLocaleDateString('es-AR')}
+                    <strong>Salida:</strong> {checkoutLocal.toLocaleString('es-AR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short'
+                    })}
                 </div>
                 <div className="text-xs text-gray-600">{dias} noche{dias !== 1 ? 's' : ''}</div>
             </div>
@@ -221,6 +256,24 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
         setSelectedReserva(reserva);
         setTelefono(reserva.huesped.telefono || '');
         setEmail(reserva.huesped.email || '');
+        setCurrentStep(1);
+        setAcompanantesData([]);
+
+        // Calcular cuántos acompañantes se necesitan (total de personas - 1 titular)
+        const personasTotal = reserva.cantidad_adultos + reserva.cantidad_menores;
+        const numAcompanantes = Math.max(0, personasTotal - 1);
+
+        // Pre-cargar acompañantes vacíos si hay más de 1 persona
+        if (numAcompanantes > 0) {
+            const acompanantesVacios = Array.from({ length: numAcompanantes }, () => ({
+                nombre: '',
+                apellido: '',
+                dni: '',
+                fecha_nacimiento: ''
+            }));
+            setAcompanantesData(acompanantesVacios);
+        }
+
         setShowCheckinDialog(true);
     };
 
@@ -259,6 +312,11 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
                 email: email !== selectedReserva.huesped.email ? email : undefined
             };
 
+            // Preparar acompañantes para enviar (solo los que tienen datos completos)
+            const acompanantesParaEnviar = acompanantesData.filter(
+                acomp => acomp.nombre && acomp.apellido && acomp.dni && acomp.fecha_nacimiento
+            );
+
             const response = await fetch('/api/checkin', {
                 method: 'POST',
                 headers: {
@@ -267,6 +325,7 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
                 body: JSON.stringify({
                     id_reserva: selectedReserva.id_reservas,
                     contacto_actualizado: (contacto_actualizado.telefono || contacto_actualizado.email) ? contacto_actualizado : undefined,
+                    acompanantes: acompanantesParaEnviar.length > 0 ? acompanantesParaEnviar : undefined,
                     crear_factura: true,
                     notificar_housekeeping: true
                 })
@@ -285,6 +344,8 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
                 setSelectedReserva(null);
                 setTelefono('');
                 setEmail('');
+                setCurrentStep(1);
+                setAcompanantesData([]);
                 onCheckinSuccess();
             } else {
                 toastRef.current?.show({
@@ -557,6 +618,46 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
                             </div>
                         </div>
 
+                        {/* Acompañantes (si hay) */}
+                        {selectedReserva.acompanantes && selectedReserva.acompanantes.length > 0 && (
+                            <div className="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded">
+                                <h3 className="font-bold text-lg text-indigo-900 mb-3 flex items-center gap-2">
+                                    <i className="pi pi-users"></i>
+                                    Acompañantes ({selectedReserva.acompanantes.length})
+                                </h3>
+                                <div className="space-y-2">
+                                    {selectedReserva.acompanantes.map((acompanante, index) => {
+                                        const edad = Math.floor(
+                                            (new Date().getTime() - new Date(acompanante.fecha_nacimiento).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+                                        );
+                                        return (
+                                            <div
+                                                key={acompanante.id_acompanante}
+                                                className="bg-white border border-indigo-200 rounded-lg p-3 shadow-sm"
+                                            >
+                                                <div className="grid grid-cols-3 gap-3 text-sm">
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">Nombre:</span>
+                                                        <p className="text-gray-900">
+                                                            {acompanante.nombre} {acompanante.apellido}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">DNI:</span>
+                                                        <p className="text-gray-900">{acompanante.dni}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">Edad:</span>
+                                                        <p className="text-gray-900">{edad} años</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Botón Cerrar */}
                         <div className="flex justify-end pt-3 border-t">
                             <Button
@@ -582,118 +683,271 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
                     setSelectedReserva(null);
                     setTelefono('');
                     setEmail('');
+                    setCurrentStep(1);
+                    setAcompanantesData([]);
                 }}
-                style={{ width: '500px' }}
+                style={{ width: '600px', maxWidth: '90vw' }}
                 modal
             >
                 {selectedReserva && (
                     <div className="space-y-4">
-                        <div className="bg-green-50 border-l-4 border-green-400 p-4">
-                            <div className="flex items-start">
-                                <i className="pi pi-check-circle text-green-600 mr-3 mt-1"></i>
-                                <div>
-                                    <p className="font-semibold text-green-800">
-                                        ¿Confirmar check-in de esta reserva?
-                                    </p>
-                                    <p className="text-sm text-green-700 mt-1">
-                                        El estado de la reserva y las habitaciones será actualizado.
+                        {/* Steps/Wizard indicator */}
+                        {acompanantesData.length > 0 && (
+                            <Steps
+                                model={[
+                                    { label: 'Información' },
+                                    { label: 'Acompañantes' },
+                                    { label: 'Confirmar' }
+                                ]}
+                                activeIndex={currentStep - 1}
+                                readOnly
+                                className="mb-4"
+                            />
+                        )}
+
+                        {/* PASO 1: Información y Contacto */}
+                        {currentStep === 1 && (
+                            <>
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <i className="pi pi-info-circle text-blue-600"></i>
+                                        Información de la Reserva
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <span className="font-semibold">Reserva ID:</span>
+                                        <span>#{selectedReserva.id_reservas}</span>
+
+                                        <span className="font-semibold">Huésped Titular:</span>
+                                        <span>{selectedReserva.huesped.nombre} {selectedReserva.huesped.apellido}</span>
+
+                                        <span className="font-semibold">DNI:</span>
+                                        <span>{selectedReserva.huesped.documento}</span>
+
+                                        <span className="font-semibold">Habitaciones:</span>
+                                        <span>
+                                            {selectedReserva.reservas_habitaciones.map(rh => rh.habitacion.numero).join(', ')}
+                                        </span>
+
+                                        <span className="font-semibold">Total Personas:</span>
+                                        <span className="font-medium text-blue-700">
+                                            {selectedReserva.cantidad_adultos + selectedReserva.cantidad_menores}
+                                            ({selectedReserva.cantidad_adultos} adultos, {selectedReserva.cantidad_menores} menores)
+                                        </span>
+
+                                        <span className="font-semibold">Check-in:</span>
+                                        <span>
+                                            {new Date(selectedReserva.fecha_checkin).toLocaleString('es-AR', {
+                                                dateStyle: 'short',
+                                                timeStyle: 'short'
+                                            })}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Validaciones */}
+                                {selectedReserva.validaciones && (
+                                    <div className="space-y-2">
+                                        {selectedReserva.validaciones.excede_capacidad && (
+                                            <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+                                                <p className="text-sm text-red-800">
+                                                    <i className="pi pi-exclamation-triangle mr-2"></i>
+                                                    <strong>Advertencia:</strong> La cantidad de personas ({selectedReserva.validaciones.personas_total})
+                                                    excede la capacidad total ({selectedReserva.validaciones.capacidad_total})
+                                                </p>
+                                            </div>
+                                        )}
+                                        {!selectedReserva.validaciones.tiene_metodo_pago && (
+                                            <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
+                                                <p className="text-sm text-orange-800">
+                                                    <i className="pi pi-exclamation-circle mr-2"></i>
+                                                    <strong>Atención:</strong> No hay método de pago registrado
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Actualizar datos de contacto */}
+                                <div className="border-t pt-4">
+                                    <h4 className="font-semibold text-gray-700 mb-3">Confirmar/Actualizar Contacto del Titular</h4>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <div className="flex flex-col gap-2">
+                                            <label htmlFor="telefono" className="text-sm font-medium text-gray-700">
+                                                Teléfono
+                                            </label>
+                                            <InputText
+                                                id="telefono"
+                                                value={telefono}
+                                                onChange={(e) => setTelefono(e.target.value)}
+                                                placeholder="Teléfono del huésped"
+                                                className="w-full"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                                                Email
+                                            </label>
+                                            <InputText
+                                                id="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="Email del huésped"
+                                                type="email"
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* PASO 2: Acompañantes */}
+                        {currentStep === 2 && acompanantesData.length > 0 && (
+                            <div>
+                                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mb-4">
+                                    <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                        <i className="pi pi-users"></i>
+                                        Registrar Acompañantes
+                                    </h4>
+                                    <p className="text-sm text-blue-800">
+                                        La reserva tiene {selectedReserva.cantidad_adultos + selectedReserva.cantidad_menores} personas.
+                                        Registre los datos de los {acompanantesData.length} acompañante{acompanantesData.length > 1 ? 's' : ''} (además del titular).
                                     </p>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div className="border rounded-lg p-4 bg-gray-50">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                <span className="font-semibold">Reserva ID:</span>
-                                <span>#{selectedReserva.id_reservas}</span>
-
-                                <span className="font-semibold">Huésped:</span>
-                                <span>{selectedReserva.huesped.nombre} {selectedReserva.huesped.apellido}</span>
-
-                                <span className="font-semibold">DNI:</span>
-                                <span>{selectedReserva.huesped.documento}</span>
-
-                                <span className="font-semibold">Habitaciones:</span>
-                                <span>
-                                    {selectedReserva.reservas_habitaciones.map(rh => rh.habitacion.numero).join(', ')}
-                                </span>
-
-                                <span className="font-semibold">Check-in:</span>
-                                <span>
-                                    {new Date(selectedReserva.fecha_checkin).toLocaleString('es-AR', {
-                                        dateStyle: 'short',
-                                        timeStyle: 'short'
-                                    })}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Información de método de pago */}
-                        {selectedReserva.metodo_pago && (
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                                <div className="text-sm">
-                                    <span className="font-semibold text-blue-900">Método de pago: </span>
-                                    <span className="text-blue-800">{selectedReserva.metodo_pago.nombre_metodo}</span>
+                                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                                    {acompanantesData.map((acomp, index) => (
+                                        <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                                            <h5 className="font-semibold text-gray-700 mb-3">
+                                                Acompañante #{index + 1}
+                                            </h5>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="flex flex-col gap-2">
+                                                    <label className="text-sm font-medium text-gray-700">
+                                                        Nombre *
+                                                    </label>
+                                                    <InputText
+                                                        value={acomp.nombre}
+                                                        onChange={(e) => {
+                                                            const newData = [...acompanantesData];
+                                                            newData[index].nombre = e.target.value;
+                                                            setAcompanantesData(newData);
+                                                        }}
+                                                        placeholder="Nombre"
+                                                        className="w-full"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <label className="text-sm font-medium text-gray-700">
+                                                        Apellido *
+                                                    </label>
+                                                    <InputText
+                                                        value={acomp.apellido}
+                                                        onChange={(e) => {
+                                                            const newData = [...acompanantesData];
+                                                            newData[index].apellido = e.target.value;
+                                                            setAcompanantesData(newData);
+                                                        }}
+                                                        placeholder="Apellido"
+                                                        className="w-full"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <label className="text-sm font-medium text-gray-700">
+                                                        DNI/Documento *
+                                                    </label>
+                                                    <InputText
+                                                        value={acomp.dni}
+                                                        onChange={(e) => {
+                                                            const newData = [...acompanantesData];
+                                                            newData[index].dni = e.target.value;
+                                                            setAcompanantesData(newData);
+                                                        }}
+                                                        placeholder="Número de documento"
+                                                        className="w-full"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <label className="text-sm font-medium text-gray-700">
+                                                        Fecha de Nacimiento *
+                                                    </label>
+                                                    <Calendar
+                                                        value={acomp.fecha_nacimiento ? new Date(acomp.fecha_nacimiento) : null}
+                                                        onChange={(e) => {
+                                                            const newData = [...acompanantesData];
+                                                            newData[index].fecha_nacimiento = e.value ? e.value.toISOString() : '';
+                                                            setAcompanantesData(newData);
+                                                        }}
+                                                        dateFormat="dd/mm/yy"
+                                                        placeholder="Seleccionar fecha"
+                                                        showIcon
+                                                        className="w-full"
+                                                        maxDate={new Date()}
+                                                        yearNavigator
+                                                        yearRange="1920:2024"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
 
-                        {/* Validaciones */}
-                        {selectedReserva.validaciones && (
-                            <div className="space-y-2">
-                                {selectedReserva.validaciones.excede_capacidad && (
-                                    <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                                        <p className="text-sm text-red-800">
-                                            <i className="pi pi-exclamation-triangle mr-2"></i>
-                                            <strong>Advertencia:</strong> La cantidad de personas ({selectedReserva.validaciones.personas_total})
-                                            excede la capacidad total ({selectedReserva.validaciones.capacidad_total})
-                                        </p>
+                        {/* PASO 3: Confirmación */}
+                        {currentStep === 3 && (
+                            <div className="space-y-4">
+                                <div className="bg-green-50 border-l-4 border-green-400 p-4">
+                                    <div className="flex items-start">
+                                        <i className="pi pi-check-circle text-green-600 mr-3 mt-1 text-xl"></i>
+                                        <div>
+                                            <p className="font-semibold text-green-800 text-lg">
+                                                ¿Confirmar check-in?
+                                            </p>
+                                            <p className="text-sm text-green-700 mt-1">
+                                                Revise los datos antes de finalizar el proceso.
+                                            </p>
+                                        </div>
                                     </div>
-                                )}
-                                {!selectedReserva.validaciones.tiene_metodo_pago && (
-                                    <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
-                                        <p className="text-sm text-orange-800">
-                                            <i className="pi pi-exclamation-circle mr-2"></i>
-                                            <strong>Atención:</strong> No hay método de pago registrado
-                                        </p>
+                                </div>
+
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h5 className="font-semibold text-gray-800 mb-3">Resumen</h5>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Reserva:</span>
+                                            <span className="font-semibold">#{selectedReserva.id_reservas}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Titular:</span>
+                                            <span className="font-semibold">
+                                                {selectedReserva.huesped.nombre} {selectedReserva.huesped.apellido}
+                                            </span>
+                                        </div>
+                                        {acompanantesData.length > 0 && (
+                                            <div className="border-t pt-2 mt-2">
+                                                <span className="text-gray-600 font-semibold">
+                                                    Acompañantes registrados: {acompanantesData.filter(a => a.nombre && a.dni).length}/{acompanantesData.length}
+                                                </span>
+                                                <div className="mt-2 space-y-1">
+                                                    {acompanantesData.map((acomp, idx) => (
+                                                        acomp.nombre && acomp.dni && (
+                                                            <div key={idx} className="flex items-center gap-2 text-xs bg-white p-2 rounded">
+                                                                <i className="pi pi-user text-blue-600"></i>
+                                                                <span>{acomp.nombre} {acomp.apellido} - DNI: {acomp.dni}</span>
+                                                            </div>
+                                                        )
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         )}
 
-                        {/* Actualizar datos de contacto */}
-                        <div className="border-t pt-4">
-                            <h4 className="font-semibold text-gray-700 mb-3">Confirmar/Actualizar Contacto</h4>
-                            <div className="grid grid-cols-1 gap-3">
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="telefono" className="text-sm font-medium text-gray-700">
-                                        Teléfono
-                                    </label>
-                                    <InputText
-                                        id="telefono"
-                                        value={telefono}
-                                        onChange={(e) => setTelefono(e.target.value)}
-                                        placeholder="Teléfono del huésped"
-                                        className="w-full"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="email" className="text-sm font-medium text-gray-700">
-                                        Email
-                                    </label>
-                                    <InputText
-                                        id="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="Email del huésped"
-                                        type="email"
-                                        className="w-full"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-4 border-t">
+                        {/* Botones de navegación */}
+                        <div className="flex justify-between gap-2 pt-4 border-t">
                             <Button
                                 label="Cancelar"
                                 icon="pi pi-times"
@@ -702,17 +956,45 @@ const CheckinTable: React.FC<CheckinTableProps> = ({
                                     setSelectedReserva(null);
                                     setTelefono('');
                                     setEmail('');
+                                    setCurrentStep(1);
+                                    setAcompanantesData([]);
                                 }}
                                 className="p-button-text"
                                 disabled={procesando}
                             />
-                            <Button
-                                label="Confirmar Check-in"
-                                icon="pi pi-check"
-                                onClick={handleRealizarCheckin}
-                                className="p-button-success"
-                                loading={procesando}
-                            />
+
+                            <div className="flex gap-2">
+                                {currentStep > 1 && (
+                                    <Button
+                                        label="Anterior"
+                                        icon="pi pi-arrow-left"
+                                        onClick={() => setCurrentStep(currentStep - 1)}
+                                        className="p-button-secondary"
+                                        disabled={procesando}
+                                    />
+                                )}
+
+                                {currentStep < (acompanantesData.length > 0 ? 3 : 1) && (
+                                    <Button
+                                        label="Siguiente"
+                                        icon="pi pi-arrow-right"
+                                        iconPos="right"
+                                        onClick={() => setCurrentStep(currentStep + 1)}
+                                        className="p-button-primary"
+                                        disabled={procesando}
+                                    />
+                                )}
+
+                                {(currentStep === 3 || acompanantesData.length === 0) && (
+                                    <Button
+                                        label="Confirmar Check-in"
+                                        icon="pi pi-check"
+                                        onClick={handleRealizarCheckin}
+                                        className="p-button-success"
+                                        loading={procesando}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
