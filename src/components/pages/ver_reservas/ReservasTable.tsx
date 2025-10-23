@@ -28,6 +28,15 @@ interface ReservaHabitacion {
     cantidad_personas: number;
 }
 
+interface Acompanante {
+    id_acompanante: number;
+    nombre: string;
+    apellido: string;
+    dni: string;
+    fecha_nacimiento: string;
+    fecha_creacion?: string;
+}
+
 interface Reserva {
     id_reservas: number;
     huesped: Huesped;
@@ -39,6 +48,7 @@ interface Reserva {
     monto_total: number;
     fecha_creacion: string;
     reservas_habitaciones: ReservaHabitacion[];
+    acompanantes: Acompanante[];
 }
 
 interface ReservasTableProps {
@@ -107,15 +117,29 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
     const fechaTemplate = (rowData: Reserva) => {
         const checkin = new Date(rowData.fecha_checkin);
         const checkout = new Date(rowData.fecha_checkout);
-        const dias = Math.ceil((checkout.getTime() - checkin.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Extraer fecha UTC y crear fechas locales
+        const checkinLocal = new Date(
+            checkin.getUTCFullYear(),
+            checkin.getUTCMonth(),
+            checkin.getUTCDate()
+        );
+
+        const checkoutLocal = new Date(
+            checkout.getUTCFullYear(),
+            checkout.getUTCMonth(),
+            checkout.getUTCDate()
+        );
+
+        const dias = Math.ceil((checkoutLocal.getTime() - checkinLocal.getTime()) / (1000 * 60 * 60 * 24));
 
         return (
             <div>
                 <div className="text-sm">
-                    <strong>Entrada:</strong> {checkin.toLocaleDateString('es-AR')}
+                    <strong>Entrada:</strong> {checkinLocal.toLocaleDateString('es-AR')}
                 </div>
                 <div className="text-sm">
-                    <strong>Salida:</strong> {checkout.toLocaleDateString('es-AR')}
+                    <strong>Salida:</strong> {checkoutLocal.toLocaleDateString('es-AR')}
                 </div>
                 <div className="text-xs text-gray-600">{dias} noche{dias !== 1 ? 's' : ''}</div>
             </div>
@@ -495,33 +519,62 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                                 <div>
                                     <span className="font-semibold text-gray-700">Check-in:</span>
                                     <p className="text-gray-900 font-semibold">
-                                        {new Date(selectedReserva.fecha_checkin).toLocaleDateString('es-AR', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
+                                        {(() => {
+                                            const checkin = new Date(selectedReserva.fecha_checkin);
+                                            const checkinLocal = new Date(
+                                                checkin.getUTCFullYear(),
+                                                checkin.getUTCMonth(),
+                                                checkin.getUTCDate()
+                                            );
+                                            return checkinLocal.toLocaleDateString('es-AR', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            });
+                                        })()}
                                     </p>
                                 </div>
                                 <div>
                                     <span className="font-semibold text-gray-700">Check-out:</span>
                                     <p className="text-gray-900 font-semibold">
-                                        {new Date(selectedReserva.fecha_checkout).toLocaleDateString('es-AR', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
+                                        {(() => {
+                                            const checkout = new Date(selectedReserva.fecha_checkout);
+                                            const checkoutLocal = new Date(
+                                                checkout.getUTCFullYear(),
+                                                checkout.getUTCMonth(),
+                                                checkout.getUTCDate()
+                                            );
+                                            return checkoutLocal.toLocaleDateString('es-AR', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            });
+                                        })()}
                                     </p>
                                 </div>
                                 <div>
                                     <span className="font-semibold text-gray-700">Duración:</span>
                                     <p className="text-gray-900 font-semibold">
-                                        {Math.ceil(
-                                            (new Date(selectedReserva.fecha_checkout).getTime() -
-                                                new Date(selectedReserva.fecha_checkin).getTime()) /
-                                            (1000 * 60 * 60 * 24)
-                                        )} noche(s)
+                                        {(() => {
+                                            const checkin = new Date(selectedReserva.fecha_checkin);
+                                            const checkout = new Date(selectedReserva.fecha_checkout);
+                                            const checkinLocal = new Date(
+                                                checkin.getUTCFullYear(),
+                                                checkin.getUTCMonth(),
+                                                checkin.getUTCDate()
+                                            );
+                                            const checkoutLocal = new Date(
+                                                checkout.getUTCFullYear(),
+                                                checkout.getUTCMonth(),
+                                                checkout.getUTCDate()
+                                            );
+                                            return Math.ceil(
+                                                (checkoutLocal.getTime() - checkinLocal.getTime()) /
+                                                (1000 * 60 * 60 * 24)
+                                            );
+                                        })()} noche(s)
                                     </p>
                                 </div>
                             </div>
@@ -550,6 +603,61 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Acompañantes (si hay) */}
+                        {selectedReserva.acompanantes && selectedReserva.acompanantes.length > 0 && (
+                            <div className="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded">
+                                <h3 className="font-bold text-lg text-indigo-900 mb-3 flex items-center gap-2">
+                                    <i className="pi pi-users"></i>
+                                    Acompañantes ({selectedReserva.acompanantes.length})
+                                </h3>
+                                <div className="space-y-2">
+                                    {selectedReserva.acompanantes.map((acompanante, index) => {
+                                        const fechaNac = new Date(acompanante.fecha_nacimiento);
+                                        const edad = Math.floor(
+                                            (new Date().getTime() - fechaNac.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+                                        );
+                                        return (
+                                            <div
+                                                key={acompanante.id_acompanante}
+                                                className="bg-white border border-indigo-200 rounded-lg p-3 shadow-sm"
+                                            >
+                                                <div className="grid grid-cols-4 gap-3 text-sm">
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">Nombre:</span>
+                                                        <p className="text-gray-900">
+                                                            {acompanante.nombre} {acompanante.apellido}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">DNI:</span>
+                                                        <p className="text-gray-900">{acompanante.dni}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">Edad:</span>
+                                                        <p className="text-gray-900">{edad} años</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-semibold text-gray-700">Fecha Nac.:</span>
+                                                        <p className="text-gray-900">
+                                                            {(() => {
+                                                                const fechaNacimiento = new Date(acompanante.fecha_nacimiento);
+                                                                const fechaLocal = new Date(
+                                                                    fechaNacimiento.getUTCFullYear(),
+                                                                    fechaNacimiento.getUTCMonth(),
+                                                                    fechaNacimiento.getUTCDate()
+                                                                );
+                                                                return fechaLocal.toLocaleDateString('es-AR');
+                                                            })()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Habitaciones */}
                         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
@@ -645,7 +753,17 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                                 <span>{selectedReserva.huesped.documento}</span>
 
                                 <span className="font-semibold">Fecha Check-in:</span>
-                                <span>{new Date(selectedReserva.fecha_checkin).toLocaleDateString('es-AR')}</span>
+                                <span>
+                                    {(() => {
+                                        const checkin = new Date(selectedReserva.fecha_checkin);
+                                        const checkinLocal = new Date(
+                                            checkin.getUTCFullYear(),
+                                            checkin.getUTCMonth(),
+                                            checkin.getUTCDate()
+                                        );
+                                        return checkinLocal.toLocaleDateString('es-AR');
+                                    })()}
+                                </span>
 
                                 <span className="font-semibold">Monto Total:</span>
                                 <span className="font-semibold">

@@ -150,6 +150,19 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
+          },
+          acompanantes: {
+            select: {
+              id_acompanante: true,
+              nombre: true,
+              apellido: true,
+              dni: true,
+              fecha_nacimiento: true,
+              fecha_creacion: true
+            },
+            orderBy: {
+              id_acompanante: 'asc'
+            }
           }
         },
         orderBy,
@@ -193,6 +206,14 @@ export async function GET(request: NextRequest) {
           capacidad: rh.habitacion.capacidad,
           precio_base: Number(rh.habitacion.precio_base)
         }
+      })),
+      acompanantes: reserva.acompanantes.map(acomp => ({
+        id_acompanante: acomp.id_acompanante,
+        nombre: acomp.nombre,
+        apellido: acomp.apellido,
+        dni: acomp.dni,
+        fecha_nacimiento: acomp.fecha_nacimiento.toISOString(),
+        fecha_creacion: acomp.fecha_creacion?.toISOString()
       }))
     }));
 

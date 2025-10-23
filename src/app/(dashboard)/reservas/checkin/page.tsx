@@ -48,6 +48,15 @@ interface Validaciones {
     personas_total: number;
 }
 
+interface Acompanante {
+    id_acompanante: number;
+    nombre: string;
+    apellido: string;
+    dni: string;
+    fecha_nacimiento: string;
+    fecha_creacion?: string;
+}
+
 interface Reserva {
     id_reservas: number;
     huesped: Huesped;
@@ -61,6 +70,7 @@ interface Reserva {
     metodo_pago?: MetodoPago | null;
     tarjeta?: Tarjeta | null;
     reservas_habitaciones: ReservaHabitacion[];
+    acompanantes: Acompanante[];
     validaciones?: Validaciones;
 }
 
