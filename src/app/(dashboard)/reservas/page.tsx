@@ -11,11 +11,17 @@ export default function ReservasPage() {
   // 🔹 Total de personas en la reserva (adultos + menores)
   const [totalPersonas, setTotalPersonas] = useState<number>(1);
 
+  // 🔹 Fechas de la reserva (compartidas entre formulario y tabla)
+  const [fechaCheckin, setFechaCheckin] = useState<Date | null>(null);
+  const [fechaCheckout, setFechaCheckout] = useState<Date | null>(null);
+
   // ✅ Nueva función: se llama cuando la reserva se registra con éxito
   const handleReservaExitosa = (): void => {
     // Limpia todo el estado compartido
     setHabitacionesSeleccionadas([]);
     setTotalPersonas(1);
+    setFechaCheckin(null);
+    setFechaCheckout(null);
   };
 
   return (
@@ -26,7 +32,11 @@ export default function ReservasPage() {
           <GuestForm
             habitacionesSeleccionadas={habitacionesSeleccionadas}
             onTotalPersonasChange={setTotalPersonas}
-            onReservaExitosa={handleReservaExitosa} // ✅ callback que limpia todo
+            onFechasChange={(desde, hasta) => {
+              setFechaCheckin(desde);
+              setFechaCheckout(hasta);
+            }}
+            onReservaExitosa={handleReservaExitosa}
           />
         </div>
 
@@ -36,6 +46,8 @@ export default function ReservasPage() {
             onSelectHabitaciones={setHabitacionesSeleccionadas}
             habitacionesSeleccionadas={habitacionesSeleccionadas}
             totalPersonasReserva={totalPersonas}
+            fechaCheckin={fechaCheckin}
+            fechaCheckout={fechaCheckout}
           />
         </div>
       </div>

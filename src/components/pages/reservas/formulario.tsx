@@ -23,6 +23,7 @@ interface Huesped {
 interface GuestFormProps {
   habitacionesSeleccionadas: RoomRow[];
   onTotalPersonasChange?: (total: number) => void;
+  onFechasChange?: (desde: Date | null, hasta: Date | null) => void;
   onReservaExitosa?: () => void;
 }
 
@@ -35,6 +36,7 @@ const paymentTypes = [
 const GuestForm: React.FC<GuestFormProps> = ({
   habitacionesSeleccionadas,
   onTotalPersonasChange,
+  onFechasChange,
   onReservaExitosa,
 }) => {
   const toast = useRef<Toast>(null);
@@ -76,6 +78,11 @@ const GuestForm: React.FC<GuestFormProps> = ({
     onTotalPersonasChange?.(total);
   }, [adultos, menores, onTotalPersonasChange]);
 
+  // 🔄 Notificar al padre cuando cambien las fechas
+  useEffect(() => {
+    onFechasChange?.(desde, hasta);
+  }, [desde, hasta, onFechasChange]);
+
   // 🔍 Buscar huéspedes
   const buscarHuespedes = async (event: AutoCompleteCompleteEvent): Promise<void> => {
     const query = event.query;
@@ -113,9 +120,26 @@ const GuestForm: React.FC<GuestFormProps> = ({
 
   // 💳 Datos de tarjeta
   const [numeroTarjeta, setNumeroTarjeta] = useState("");
+  const [numeroTarjetaFormateado, setNumeroTarjetaFormateado] = useState(""); // Para mostrar con espacios
   const [titularTarjeta, setTitularTarjeta] = useState("");
   const [expiracion, setExpiracion] = useState<string>("");
   const [codigoSeguridad, setCodigoSeguridad] = useState<number | null>(null);
+
+  // 🔢 Formatear número de tarjeta: 1234 5678 9012 3456
+  const handleNumeroTarjetaChange = (value: string) => {
+    // Eliminar todo lo que no sea número
+    const soloNumeros = value.replace(/\D/g, '');
+
+    // Limitar a 16 dígitos
+    const limitado = soloNumeros.slice(0, 16);
+
+    // Guardar sin formato para la base de datos
+    setNumeroTarjeta(limitado);
+
+    // Formatear con espacios cada 4 dígitos para mostrar
+    const formateado = limitado.replace(/(\d{4})(?=\d)/g, '$1 ');
+    setNumeroTarjetaFormateado(formateado);
+  };
 
   // 🧹 Limpiar formulario
   const clear = (): void => {
@@ -129,6 +153,7 @@ const GuestForm: React.FC<GuestFormProps> = ({
     setMonto(0);
     setFormaPago(null);
     setNumeroTarjeta("");
+    setNumeroTarjetaFormateado("");
     setTitularTarjeta("");
     setExpiracion("");
     setCodigoSeguridad(null);
@@ -380,9 +405,11 @@ const GuestForm: React.FC<GuestFormProps> = ({
           Tarjeta (opcional)
         </h3>
         <InputText
-          value={numeroTarjeta}
-          onChange={(e) => setNumeroTarjeta(e.target.value)}
-          placeholder="Número de tarjeta"
+          value={numeroTarjetaFormateado}
+          onChange={(e) => handleNumeroTarjetaChange(e.target.value)}
+          placeholder="Número de tarjeta (16 dígitos)"
+          maxLength={19}
+          inputMode="numeric"
         />
         <InputText
           value={titularTarjeta}
@@ -402,10 +429,17 @@ const GuestForm: React.FC<GuestFormProps> = ({
             mask="99/99"
             placeholder="Vencimiento (MM/AA)"
           />
-          <InputNumber
-            value={codigoSeguridad}
-            onValueChange={(e) => setCodigoSeguridad(e.value ?? 0)}
-            placeholder="Código CVV"
+          <InputText
+            value={codigoSeguridad?.toString() || ""}
+            onChange={(e) => {
+              const valor = e.target.value.replace(/\D/g, ''); // Solo números
+              if (valor.length <= 3) {
+                setCodigoSeguridad(valor ? parseInt(valor) : null);
+              }
+            }}
+            placeholder="Código CVV (3 dígitos)"
+            maxLength={3}
+            inputMode="numeric"
           />
         </div>
 
