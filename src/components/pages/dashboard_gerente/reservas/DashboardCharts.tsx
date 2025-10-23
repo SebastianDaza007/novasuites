@@ -80,9 +80,10 @@ export default function DashboardCharts({ data }: DashboardChartsProps) {
   // 🎨 Render
   // ==========================
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+    <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Ocupación mensual */}
-      <Card className="shadow-2 border-round-2xl">
+      {/*<Card className="shadow-2 border-round-2xl">
         <h3 className="text-lg font-semibold text-gray-700 mb-3">
           Tasa de ocupación mensual (%)
         </h3>
@@ -95,7 +96,7 @@ export default function DashboardCharts({ data }: DashboardChartsProps) {
             <Line type="monotone" dataKey="porcentaje" stroke="#00C49F" />
           </LineChart>
         </ResponsiveContainer>
-      </Card>
+      </Card>8*/}
 
       {/* Reservas por tipo de habitación */}
       <Card className="shadow-2 border-round-2xl">
@@ -130,9 +131,11 @@ export default function DashboardCharts({ data }: DashboardChartsProps) {
           </BarChart>
         </ResponsiveContainer>
       </Card>
+    </div>
+    
 
       {/* Ranking de métodos de pago por mes */}
-      <Card className="shadow-2 border-round-2xl">
+      <Card className="shadow-2 border-round-2xl wl-full">
         <h3 className="text-lg font-semibold text-gray-700 mb-3">
           Ranking de métodos de pago por mes
         </h3>
