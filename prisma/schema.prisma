@@ -281,7 +281,25 @@ model reservas {
   tarjeta        tarjeta_huesped? @relation(name: "ReservaTarjeta", fields: [id_tarjeta], references: [id_tarjeta]) // ✅ lado dueño
   reservas_habitaciones reservas_habitaciones[]
   facturas_ventas  facturas_ventas[]
+  //acompañantes de la reserva (si aplica)
+  acompanantes acompanante[]
+
 }
+
+model acompanante {
+  id_acompanante   Int       @id @default(autoincrement())
+  nombre           String
+  apellido         String
+  dni              String
+  fecha_nacimiento DateTime  @db.Date
+  id_reserva       Int
+
+  // Relación con la reserva principal
+  reserva reservas @relation(fields: [id_reserva], references: [id_reservas], onDelete: Cascade)
+
+  fecha_creacion   DateTime? @default(now())
+}
+
 
 // 🔹 Reservas_Habitaciones (intermedia para N:N)
 model reservas_habitaciones {
