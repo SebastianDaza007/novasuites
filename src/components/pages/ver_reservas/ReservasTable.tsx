@@ -224,8 +224,8 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
     };
 
     const handleCheckout = (reserva: Reserva) => {
-        // Redirigir a la página de checkout (por crear)
-        router.push(`/reservas/check-out/${reserva.id_reservas}`);
+        // Redirigir a la página de checkout con el ID de la reserva
+        router.push(`/reservas/checkout?reserva=${reserva.id_reservas}`);
     };
 
     const handleCancelarReserva = async () => {

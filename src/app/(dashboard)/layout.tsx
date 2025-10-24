@@ -17,7 +17,8 @@ export default function DashboardLayout({
     { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "Registrar/Ver Proveedores",  path: "/proveedores" }, { name: "Facturas", path: "/facturas" }]},
     { icon: "pi-copy", label: "Ordenes de Compra", path: "/orden_compra" , options: [{ name: "Registrar/Ver Ordenes de Compra",  path: "/orden_compra" }]},
     { icon: "pi-calendar-plus", path: "/reservas", label: "Reservas", options: [{ name: "Agendar reserva",  path: "/reservas" }, { name: "Ver reservas", path: "/reservas/ver_reservas" }, { name: "Check-in", path: "/reservas/checkin" }, { name: "Check-out", path: "/reservas/checkout" }]},
-    { icon: "pi-chart-line", path: "/reportes", label: "Reportes", options: [{ name: "Financieros",  path: "/reportes/financieros" }, { name: "Operativos", path: "/reportes/operativos" }, { name: "Proveedores", path: "/reportes/proveedores" }, { name: "Reservas", path: "/reportes/reservas" }, { name: "Insumos", path: "/reportes/insumos" }]},    
+    { icon: "pi-home", label: "Housekeeping", path: "/housekeeping", options: null },
+    { icon: "pi-chart-line", path: "/reportes", label: "Reportes", options: [{ name: "Financieros",  path: "/reportes/financieros" }, { name: "Operativos", path: "/reportes/operativos" }, { name: "Proveedores", path: "/reportes/proveedores" }, { name: "Reservas", path: "/reportes/reservas" }, { name: "Insumos", path: "/reportes/insumos" }]},
   ];
 
 

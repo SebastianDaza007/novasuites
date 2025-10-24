@@ -189,6 +189,40 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Función para generar consumos consistentes basados en ID de reserva
+function generarConsumos(idReserva: number, montoHospedaje: number) {
+  const consumosBase = [
+    { categoria: 'Minibar', items: ['Coca Cola 350ml', 'Agua Mineral 500ml', 'Cerveza Corona', 'Snickers', 'Papas Lays', 'Vino Tinto 187ml'] },
+    { categoria: 'Room Service', items: ['Desayuno Continental', 'Hamburguesa Completa', 'Ensalada César', 'Pizza Margarita', 'Club Sandwich', 'Pasta Alfredo'] },
+    { categoria: 'Lavandería', items: ['Camisa', 'Pantalón', 'Vestido', 'Traje Completo', 'Sábanas extras'] },
+    { categoria: 'Spa & Wellness', items: ['Masaje Relajante 60min', 'Tratamiento Facial', 'Acceso Gimnasio', 'Sauna'] },
+    { categoria: 'Bar & Restaurante', items: ['Cena para 2', 'Cocktail Mojito', 'Botella de Champagne', 'Postre del Chef'] },
+    { categoria: 'Servicios', items: ['Estacionamiento', 'WiFi Premium', 'Late Checkout', 'Traslado Aeropuerto'] }
+  ];
+
+  const seed = idReserva;
+  const numConsumos = (seed % 5) + 3; // Entre 3 y 7 consumos
+  const consumos = [];
+
+  for (let i = 0; i < numConsumos; i++) {
+    const catIndex = (seed * (i + 1)) % consumosBase.length;
+    const categoria = consumosBase[catIndex];
+    const itemIndex = (seed * (i + 2)) % categoria.items.length;
+    const item = categoria.items[itemIndex];
+    const cantidad = ((seed * (i + 3)) % 3) + 1;
+    const precioBase = [500, 800, 1200, 1500, 2000, 2500, 3000, 3500, 4000];
+    const precio = precioBase[(seed * (i + 4)) % precioBase.length];
+
+    consumos.push({
+      descripcion: `${categoria.categoria} - ${item}`,
+      cantidad: cantidad,
+      precio_unitario: precio
+    });
+  }
+
+  return consumos;
+}
+
 // POST - Realizar check-out
 export async function POST(request: NextRequest) {
   try {
@@ -230,6 +264,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generar consumos
+    const consumos = generarConsumos(id_reserva, Number(reserva.monto_total));
+    const totalConsumos = consumos.reduce((sum, c) => sum + (c.cantidad * c.precio_unitario), 0);
+
     // Realizar el checkout en una transacción
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. Actualizar estado de la reserva a CHECKOUT
@@ -255,9 +293,69 @@ export async function POST(request: NextRequest) {
         }
       });
 
+      // 3. Generar número de factura único
+      const ultimaFactura = await tx.facturas_ventas.findFirst({
+        orderBy: { id_facturas_ventas: 'desc' },
+        select: { numero: true }
+      });
+
+      let numeroFactura = 'FV-0001';
+      if (ultimaFactura) {
+        const ultimoNumero = parseInt(ultimaFactura.numero.split('-')[1]);
+        numeroFactura = `FV-${String(ultimoNumero + 1).padStart(4, '0')}`;
+      }
+
+      // 4. Crear factura de venta
+      const fechaEmision = new Date();
+      const fechaVencimiento = new Date();
+      fechaVencimiento.setDate(fechaVencimiento.getDate() + 30); // Vencimiento a 30 días
+
+      const montoTotal = Number(reserva.monto_total) + totalConsumos;
+
+      const factura = await tx.facturas_ventas.create({
+        data: {
+          numero: numeroFactura,
+          id_reserva: id_reserva,
+          fecha_emision: fechaEmision,
+          fecha_vencimiento: fechaVencimiento,
+          monto_total: montoTotal,
+          estado: 'PAGADA' // Asumimos que se paga al checkout
+        }
+      });
+
+      // 5. Crear detalles de factura - Hospedaje
+      const habitaciones = reserva.reservas_habitaciones.map(rh => rh.habitacion.numero).join(', ');
+
+      await tx.detalle_facturas_ventas.create({
+        data: {
+          id_factura: factura.id_facturas_ventas,
+          descripcion: `Hospedaje - Habitación(es): ${habitaciones}`,
+          cantidad: 1,
+          precio_unitario: reserva.monto_total
+        }
+      });
+
+      // 6. Crear detalles de factura - Consumos
+      for (const consumo of consumos) {
+        await tx.detalle_facturas_ventas.create({
+          data: {
+            id_factura: factura.id_facturas_ventas,
+            descripcion: consumo.descripcion,
+            cantidad: consumo.cantidad,
+            precio_unitario: consumo.precio_unitario
+          }
+        });
+      }
+
       return {
         reserva: reservaActualizada,
-        habitaciones_actualizadas: habitacionesIds.length
+        habitaciones_actualizadas: habitacionesIds.length,
+        factura: {
+          id: factura.id_facturas_ventas,
+          numero: factura.numero,
+          monto_total: factura.monto_total,
+          estado: factura.estado
+        }
       };
     });
 
