@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toast } from 'primereact/toast';
 import { DataTablePageEvent, DataTableSortEvent } from 'primereact/datatable';
+import { useSearchParams } from 'next/navigation';
 import CheckoutFilters from '@/components/pages/checkout/CheckoutFilters';
 import CheckoutTable from '@/components/pages/checkout/CheckoutTable';
 
@@ -15,7 +16,9 @@ interface LazyState {
 }
 
 export default function CheckoutPage() {
+    const searchParams = useSearchParams();
     const toast = useRef<Toast>(null);
+    const [reservaIdPreseleccionada, setReservaIdPreseleccionada] = useState<number | null>(null);
 
     // Estado de paginacion y ordenamiento
     const [lazyState, setLazyState] = useState<LazyState>({
@@ -73,6 +76,14 @@ export default function CheckoutPage() {
             setLoading(false);
         }
     };
+
+    // Detectar si hay un ID de reserva en la URL
+    useEffect(() => {
+        const reservaId = searchParams.get('reserva');
+        if (reservaId) {
+            setReservaIdPreseleccionada(parseInt(reservaId));
+        }
+    }, [searchParams]);
 
     // Cargar datos al montar y cuando cambien los filtros
     useEffect(() => {
@@ -132,6 +143,8 @@ export default function CheckoutPage() {
                 onSort={onSort}
                 toastRef={toast}
                 onCheckoutSuccess={cargarReservas}
+                reservaIdPreseleccionada={reservaIdPreseleccionada}
+                onReservaPreseleccionadaProcesada={() => setReservaIdPreseleccionada(null)}
             />
         </div>
     );

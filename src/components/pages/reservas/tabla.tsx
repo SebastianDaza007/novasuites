@@ -136,7 +136,7 @@ const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
   }, [habitacionesSeleccionadas]);
 
   // 🏷️ Mostrar estado con colores
-  const estadoBody = (row: RoomRow): React.ReactNode => {
+  /*const estadoBody = (row: RoomRow): React.ReactNode => {
     const colorMap: Record<RoomEstado, string> = {
       DISPONIBLE: "bg-green-500 text-white",
       OCUPADA: "bg-orange-500 text-white",
@@ -151,7 +151,7 @@ const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
         rounded
       />
     );
-  };
+  };*/
 
   // ☑️ Checkbox de selección sincronizado
   const seleccionarBody = (row: RoomRow): React.ReactNode => {
@@ -251,7 +251,7 @@ const AvailabilityTable: React.FC<AvailabilityTableProps> = ({
         <Column field="numero" header="N°" style={{ width: '80px' }} />
         <Column field="tipo" header="Tipo" style={{ width: '120px' }} />
         <Column field="capacidad" header="Capacidad" style={{ width: '100px' }} />
-        <Column header="Estado" body={estadoBody} style={{ width: '130px' }} />
+        {/*<Column header="Estado" body={estadoBody} style={{ width: '130px' }} />*/}
         <Column header="Seleccionar" body={seleccionarBody} style={{ width: '110px' }} />
         <Column header="Personas asignadas" body={cantidadPersonasBody} style={{ width: '180px' }} />
         <Column field="precio_base" header="Precio Base (ARS)" style={{ width: '150px' }} />
