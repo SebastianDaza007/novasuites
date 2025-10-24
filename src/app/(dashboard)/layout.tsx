@@ -12,7 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const sidebarItems = [
-    // { icon: "pi-box", label: "Depósito", path: "/deposito" ,options:null},
+    { icon: "pi-th-large", label: "Home", path: "/home", options: null },
     { icon: "pi-shopping-cart", label: "Insumos", path: "/insumos" , options: [{ name: "Ver Insumos",  path: "/insumos" },{ name: "Registrar Movimientos", code: "", path: "/insumos/movimientos/registrar" },{ name: "Ver Movimientos", code: "", path: "/insumos/movimientos/movimientos-insumos" }]},
     { icon: "pi-users", label: "Proveedores", path: "/proveedores" , options: [{ name: "Registrar/Ver Proveedores",  path: "/proveedores" }, { name: "Facturas", path: "/facturas" }]},
     { icon: "pi-copy", label: "Ordenes de Compra", path: "/orden_compra" , options: [{ name: "Registrar/Ver Ordenes de Compra",  path: "/orden_compra" }]},
